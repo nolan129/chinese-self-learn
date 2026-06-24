@@ -1,0 +1,2492 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Han Note API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthz Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Auth Register",
+        "operationId": "auth_register_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Auth Login",
+        "operationId": "auth_login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Auth Refresh",
+        "operationId": "auth_refresh_api_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Auth Logout",
+        "operationId": "auth_logout_api_auth_logout_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LogoutRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Auth Logout Api Auth Logout Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Auth Me",
+        "operationId": "auth_me_api_auth_me_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyze": {
+      "post": {
+        "summary": "Analyze Text",
+        "operationId": "analyze_text_api_analyze_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/explain-tokens": {
+      "post": {
+        "summary": "Explain Tokens",
+        "operationId": "explain_tokens_api_explain_tokens_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainTokensRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainTokensResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vocabulary": {
+      "post": {
+        "summary": "Create Vocabulary",
+        "operationId": "create_vocabulary_api_vocabulary_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VocabularyCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VocabularyListItem"
+                  },
+                  "title": "Response Create Vocabulary Api Vocabulary Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Vocabulary",
+        "operationId": "get_vocabulary_api_vocabulary_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VocabularyListItem"
+                  },
+                  "title": "Response Get Vocabulary Api Vocabulary Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vocabulary/{vocab_id}": {
+      "get": {
+        "summary": "Get Vocabulary Item",
+        "operationId": "get_vocabulary_item_api_vocabulary__vocab_id__get",
+        "parameters": [
+          {
+            "name": "vocab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vocab Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VocabularyDetailItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Patch Vocabulary Item",
+        "operationId": "patch_vocabulary_item_api_vocabulary__vocab_id__patch",
+        "parameters": [
+          {
+            "name": "vocab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vocab Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VocabularyUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VocabularyDetailItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vocabulary/{vocab_id}/examples": {
+      "post": {
+        "summary": "Post Vocabulary Example",
+        "operationId": "post_vocabulary_example_api_vocabulary__vocab_id__examples_post",
+        "parameters": [
+          {
+            "name": "vocab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vocab Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VocabularyExampleCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VocabularyDetailItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/today": {
+      "get": {
+        "summary": "Reviews Today",
+        "operationId": "reviews_today_api_reviews_today_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewTodayResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/{vocab_id}/submit": {
+      "post": {
+        "summary": "Review Submit",
+        "operationId": "review_submit_api_reviews__vocab_id__submit_post",
+        "parameters": [
+          {
+            "name": "vocab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vocab Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/session/start": {
+      "post": {
+        "summary": "Review Session Start",
+        "operationId": "review_session_start_api_reviews_session_start_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewTodayResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/session/complete": {
+      "post": {
+        "summary": "Review Session Complete",
+        "operationId": "review_session_complete_api_reviews_session_complete_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSessionCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSessionCompleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notification-settings": {
+      "get": {
+        "summary": "Notification Settings Get",
+        "operationId": "notification_settings_get_api_notification_settings_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Notification Settings Put",
+        "operationId": "notification_settings_put_api_notification_settings_put",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/test-telegram": {
+      "post": {
+        "summary": "Notifications Test Telegram",
+        "operationId": "notifications_test_telegram_api_notifications_test_telegram_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Notifications Test Telegram Api Notifications Test Telegram Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/register-push-token": {
+      "post": {
+        "summary": "Notifications Register Push Token",
+        "operationId": "notifications_register_push_token_api_notifications_register_push_token_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenRegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Notifications Register Push Token Api Notifications Register Push Token Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalyzeRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "AnalyzeResponse": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "title": "Analysis Id"
+          },
+          "original_text": {
+            "type": "string",
+            "title": "Original Text"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/SentenceAnalysisResponse"
+            },
+            "type": "array",
+            "title": "Sentences"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "original_text",
+          "sentences"
+        ],
+        "title": "AnalyzeResponse"
+      },
+      "AuthSessionResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthUserResponse"
+          },
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "access_token_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Access Token Expires At"
+          },
+          "refresh_token_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Refresh Token Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "access_token",
+          "refresh_token",
+          "access_token_expires_at",
+          "refresh_token_expires_at"
+        ],
+        "title": "AuthSessionResponse"
+      },
+      "AuthUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "timezone",
+          "created_at"
+        ],
+        "title": "AuthUserResponse"
+      },
+      "ExplainSentenceRequest": {
+        "properties": {
+          "sentence_index": {
+            "type": "integer",
+            "title": "Sentence Index"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "translation_vi": {
+            "type": "string",
+            "title": "Translation Vi"
+          },
+          "natural_explanation_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Natural Explanation Vi"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/ExplainTokenRequestItem"
+            },
+            "type": "array",
+            "title": "Tokens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sentence_index",
+          "text",
+          "translation_vi",
+          "tokens"
+        ],
+        "title": "ExplainSentenceRequest"
+      },
+      "ExplainTokenRequestItem": {
+        "properties": {
+          "token_index": {
+            "type": "integer",
+            "title": "Token Index"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "pinyin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinyin"
+          },
+          "meaning_vi_brief": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meaning Vi Brief"
+          },
+          "user_status": {
+            "type": "string",
+            "title": "User Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token_index",
+          "text",
+          "pinyin",
+          "user_status"
+        ],
+        "title": "ExplainTokenRequestItem"
+      },
+      "ExplainTokensRequest": {
+        "properties": {
+          "original_text": {
+            "type": "string",
+            "title": "Original Text"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/ExplainSentenceRequest"
+            },
+            "type": "array",
+            "title": "Sentences"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original_text",
+          "sentences"
+        ],
+        "title": "ExplainTokensRequest"
+      },
+      "ExplainTokensResponse": {
+        "properties": {
+          "explanations": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationResponseItem"
+            },
+            "type": "array",
+            "title": "Explanations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "explanations"
+        ],
+        "title": "ExplainTokensResponse"
+      },
+      "ExplanationExample": {
+        "properties": {
+          "zh": {
+            "type": "string",
+            "title": "Zh"
+          },
+          "pinyin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinyin"
+          },
+          "vi": {
+            "type": "string",
+            "title": "Vi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zh",
+          "pinyin",
+          "vi"
+        ],
+        "title": "ExplanationExample"
+      },
+      "ExplanationResponseItem": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "pinyin": {
+            "type": "string",
+            "title": "Pinyin"
+          },
+          "meaning_vi": {
+            "type": "string",
+            "title": "Meaning Vi"
+          },
+          "meaning_in_context_vi": {
+            "type": "string",
+            "title": "Meaning In Context Vi"
+          },
+          "part_of_speech": {
+            "type": "string",
+            "title": "Part Of Speech"
+          },
+          "usage_note_vi": {
+            "type": "string",
+            "title": "Usage Note Vi"
+          },
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationExample"
+            },
+            "type": "array",
+            "title": "Examples"
+          },
+          "difficulty_suggestion": {
+            "type": "string",
+            "title": "Difficulty Suggestion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "pinyin",
+          "meaning_vi",
+          "meaning_in_context_vi",
+          "part_of_speech",
+          "usage_note_vi",
+          "examples",
+          "difficulty_suggestion"
+        ],
+        "title": "ExplanationResponseItem"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "LogoutRequest": {
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "title": "LogoutRequest"
+      },
+      "NotificationSettingsResponse": {
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "daily_reminder_time": {
+            "type": "string",
+            "title": "Daily Reminder Time"
+          },
+          "app_push_enabled": {
+            "type": "boolean",
+            "title": "App Push Enabled"
+          },
+          "telegram_enabled": {
+            "type": "boolean",
+            "title": "Telegram Enabled"
+          },
+          "telegram_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Chat Id"
+          },
+          "mobile_push_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile Push Token"
+          },
+          "privacy_no_source_sentence": {
+            "type": "boolean",
+            "title": "Privacy No Source Sentence"
+          },
+          "privacy_anonymize_before_save": {
+            "type": "boolean",
+            "title": "Privacy Anonymize Before Save"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timezone",
+          "daily_reminder_time",
+          "app_push_enabled",
+          "telegram_enabled",
+          "telegram_chat_id",
+          "mobile_push_token",
+          "privacy_no_source_sentence",
+          "privacy_anonymize_before_save"
+        ],
+        "title": "NotificationSettingsResponse"
+      },
+      "NotificationSettingsUpdateRequest": {
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "daily_reminder_time": {
+            "type": "string",
+            "title": "Daily Reminder Time"
+          },
+          "app_push_enabled": {
+            "type": "boolean",
+            "title": "App Push Enabled"
+          },
+          "telegram_enabled": {
+            "type": "boolean",
+            "title": "Telegram Enabled"
+          },
+          "telegram_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Chat Id"
+          },
+          "mobile_push_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile Push Token"
+          },
+          "privacy_no_source_sentence": {
+            "type": "boolean",
+            "title": "Privacy No Source Sentence"
+          },
+          "privacy_anonymize_before_save": {
+            "type": "boolean",
+            "title": "Privacy Anonymize Before Save"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timezone",
+          "daily_reminder_time",
+          "app_push_enabled",
+          "telegram_enabled",
+          "privacy_no_source_sentence",
+          "privacy_anonymize_before_save"
+        ],
+        "title": "NotificationSettingsUpdateRequest"
+      },
+      "PushTokenRegisterRequest": {
+        "properties": {
+          "push_token": {
+            "type": "string",
+            "title": "Push Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "push_token"
+        ],
+        "title": "PushTokenRegisterRequest"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 20,
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Display Name"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "display_name"
+        ],
+        "title": "RegisterRequest"
+      },
+      "ReviewSessionCompleteRequest": {
+        "properties": {
+          "results": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ReviewSessionCompleteRequest"
+      },
+      "ReviewSessionCompleteResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "forgot": {
+            "type": "integer",
+            "title": "Forgot"
+          },
+          "vague": {
+            "type": "integer",
+            "title": "Vague"
+          },
+          "remembered": {
+            "type": "integer",
+            "title": "Remembered"
+          },
+          "easy": {
+            "type": "integer",
+            "title": "Easy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "forgot",
+          "vague",
+          "remembered",
+          "easy"
+        ],
+        "title": "ReviewSessionCompleteResponse"
+      },
+      "ReviewSubmitRequest": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "result"
+        ],
+        "title": "ReviewSubmitRequest"
+      },
+      "ReviewSubmitResponse": {
+        "properties": {
+          "vocab_id": {
+            "type": "string",
+            "title": "Vocab Id"
+          },
+          "result": {
+            "type": "string",
+            "title": "Result"
+          },
+          "previous_stage": {
+            "type": "integer",
+            "title": "Previous Stage"
+          },
+          "next_stage": {
+            "type": "integer",
+            "title": "Next Stage"
+          },
+          "next_review_at": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Review At"
+          },
+          "next_review_label": {
+            "type": "string",
+            "title": "Next Review Label"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "vocab_id",
+          "result",
+          "previous_stage",
+          "next_stage",
+          "next_review_at",
+          "next_review_label",
+          "status"
+        ],
+        "title": "ReviewSubmitResponse"
+      },
+      "ReviewTodayItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "pinyin": {
+            "type": "string",
+            "title": "Pinyin"
+          },
+          "meaning_vi": {
+            "type": "string",
+            "title": "Meaning Vi"
+          },
+          "example_zh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Zh"
+          },
+          "example_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Vi"
+          },
+          "difficulty": {
+            "type": "string",
+            "title": "Difficulty"
+          },
+          "review_stage": {
+            "type": "integer",
+            "title": "Review Stage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "pinyin",
+          "meaning_vi",
+          "example_zh",
+          "example_vi",
+          "difficulty",
+          "review_stage"
+        ],
+        "title": "ReviewTodayItem"
+      },
+      "ReviewTodayResponse": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "hard_count": {
+            "type": "integer",
+            "title": "Hard Count"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewTodayItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "timezone",
+          "due_count",
+          "hard_count",
+          "estimated_minutes",
+          "items"
+        ],
+        "title": "ReviewTodayResponse"
+      },
+      "SentenceAnalysisResponse": {
+        "properties": {
+          "sentence_index": {
+            "type": "integer",
+            "title": "Sentence Index"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "translation_vi": {
+            "type": "string",
+            "title": "Translation Vi"
+          },
+          "natural_explanation_vi": {
+            "type": "string",
+            "title": "Natural Explanation Vi"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/TokenResponse"
+            },
+            "type": "array",
+            "title": "Tokens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sentence_index",
+          "text",
+          "translation_vi",
+          "natural_explanation_vi",
+          "tokens"
+        ],
+        "title": "SentenceAnalysisResponse"
+      },
+      "TelegramTestRequest": {
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "title": "TelegramTestRequest"
+      },
+      "TokenResponse": {
+        "properties": {
+          "token_index": {
+            "type": "integer",
+            "title": "Token Index"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "pinyin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinyin"
+          },
+          "meaning_vi_brief": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meaning Vi Brief"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type"
+          },
+          "is_learnable": {
+            "type": "boolean",
+            "title": "Is Learnable"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token_index",
+          "text",
+          "pinyin",
+          "meaning_vi_brief",
+          "token_type",
+          "is_learnable",
+          "status"
+        ],
+        "title": "TokenResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VocabularyCreateItem": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "pinyin": {
+            "type": "string",
+            "title": "Pinyin"
+          },
+          "meaning_vi": {
+            "type": "string",
+            "title": "Meaning Vi"
+          },
+          "meaning_in_context_vi": {
+            "type": "string",
+            "title": "Meaning In Context Vi"
+          },
+          "part_of_speech": {
+            "type": "string",
+            "title": "Part Of Speech"
+          },
+          "usage_note_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Note Vi"
+          },
+          "difficulty": {
+            "type": "string",
+            "title": "Difficulty",
+            "default": "medium"
+          },
+          "source_sentence_zh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Sentence Zh"
+          },
+          "source_sentence_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Sentence Vi"
+          },
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationExample"
+            },
+            "type": "array",
+            "title": "Examples"
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "pinyin",
+          "meaning_vi",
+          "meaning_in_context_vi",
+          "part_of_speech"
+        ],
+        "title": "VocabularyCreateItem"
+      },
+      "VocabularyCreateRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/VocabularyCreateItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "VocabularyCreateRequest"
+      },
+      "VocabularyDetailItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "pinyin": {
+            "type": "string",
+            "title": "Pinyin"
+          },
+          "meaning_vi": {
+            "type": "string",
+            "title": "Meaning Vi"
+          },
+          "meaning_in_context_vi": {
+            "type": "string",
+            "title": "Meaning In Context Vi"
+          },
+          "part_of_speech": {
+            "type": "string",
+            "title": "Part Of Speech"
+          },
+          "usage_note_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Note Vi"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "difficulty": {
+            "type": "string",
+            "title": "Difficulty"
+          },
+          "review_stage": {
+            "type": "integer",
+            "title": "Review Stage"
+          },
+          "review_count": {
+            "type": "integer",
+            "title": "Review Count"
+          },
+          "next_review_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review At"
+          },
+          "next_review_label": {
+            "type": "string",
+            "title": "Next Review Label"
+          },
+          "example_zh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Zh"
+          },
+          "example_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Vi"
+          },
+          "successful_review_count": {
+            "type": "integer",
+            "title": "Successful Review Count"
+          },
+          "memory_strength": {
+            "type": "integer",
+            "title": "Memory Strength"
+          },
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/VocabularyExampleCreateRequest"
+            },
+            "type": "array",
+            "title": "Examples"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "pinyin",
+          "meaning_vi",
+          "meaning_in_context_vi",
+          "part_of_speech",
+          "usage_note_vi",
+          "status",
+          "difficulty",
+          "review_stage",
+          "review_count",
+          "next_review_at",
+          "next_review_label",
+          "example_zh",
+          "example_vi",
+          "successful_review_count",
+          "memory_strength",
+          "examples"
+        ],
+        "title": "VocabularyDetailItem"
+      },
+      "VocabularyExampleCreateRequest": {
+        "properties": {
+          "source_sentence_zh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Sentence Zh"
+          },
+          "source_sentence_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Sentence Vi"
+          },
+          "example_zh": {
+            "type": "string",
+            "title": "Example Zh"
+          },
+          "example_pinyin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Pinyin"
+          },
+          "example_vi": {
+            "type": "string",
+            "title": "Example Vi"
+          },
+          "is_user_source": {
+            "type": "boolean",
+            "title": "Is User Source",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "example_zh",
+          "example_vi"
+        ],
+        "title": "VocabularyExampleCreateRequest"
+      },
+      "VocabularyListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "pinyin": {
+            "type": "string",
+            "title": "Pinyin"
+          },
+          "meaning_vi": {
+            "type": "string",
+            "title": "Meaning Vi"
+          },
+          "meaning_in_context_vi": {
+            "type": "string",
+            "title": "Meaning In Context Vi"
+          },
+          "part_of_speech": {
+            "type": "string",
+            "title": "Part Of Speech"
+          },
+          "usage_note_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Note Vi"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "difficulty": {
+            "type": "string",
+            "title": "Difficulty"
+          },
+          "review_stage": {
+            "type": "integer",
+            "title": "Review Stage"
+          },
+          "review_count": {
+            "type": "integer",
+            "title": "Review Count"
+          },
+          "next_review_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review At"
+          },
+          "next_review_label": {
+            "type": "string",
+            "title": "Next Review Label"
+          },
+          "example_zh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Zh"
+          },
+          "example_vi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Vi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "pinyin",
+          "meaning_vi",
+          "meaning_in_context_vi",
+          "part_of_speech",
+          "usage_note_vi",
+          "status",
+          "difficulty",
+          "review_stage",
+          "review_count",
+          "next_review_at",
+          "next_review_label",
+          "example_zh",
+          "example_vi"
+        ],
+        "title": "VocabularyListItem"
+      },
+      "VocabularyUpdateRequest": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difficulty"
+          },
+          "next_review_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review At"
+          }
+        },
+        "type": "object",
+        "title": "VocabularyUpdateRequest"
+      }
+    }
+  }
+}

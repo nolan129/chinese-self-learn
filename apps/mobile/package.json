@@ -1,0 +1,26 @@
+{
+  "scripts": {
+    "start": "node ../../scripts/run-mobile-expo.cjs start",
+    "android": "node ../../scripts/run-mobile-expo.cjs start --android",
+    "ios": "node ../../scripts/run-mobile-expo.cjs start --ios",
+    "web": "node ../../scripts/run-mobile-expo.cjs start --web"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "latest",
+    "expo": "latest",
+    "expo-constants": "^56.0.18",
+    "expo-device": "^56.0.4",
+    "expo-notifications": "^56.0.18",
+    "expo-secure-store": "^56.0.4",
+    "expo-status-bar": "latest",
+    "react": "latest",
+    "react-dom": "^19.2.7",
+    "react-native": "latest",
+    "react-native-safe-area-context": "latest",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "typescript": "latest"
+  }
+}

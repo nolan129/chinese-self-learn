@@ -1,0 +1,57 @@
+# NEXT_STEPS
+
+## Backlog
+
+- `ready` Validate the first real account registration path on an isolated database or with a user-approved first account, so the seed-data migration can be confirmed without consuming the shared local seed state by accident.
+- `ready` Authenticate GitHub locally on this workstation (`gh auth login` or SSH) and perform the first commit/push to `origin/main`, now that local git bootstrap and remote wiring are in place.
+- `ready` Manually QA the new web auth flow end-to-end: register/login/logout -> analyze -> save -> gated review -> settings.
+- `ready` Manually QA the new mobile auth/session-restore flow on Expo runtime, including the gated review reveal and account-scoped vocabulary/review data.
+- `ready` Manually QA the updated review UX copy and scoring order to confirm `Nhớ` / `Dễ` submit directly while `Chưa nhớ` / `Cần ôn tập` reveal meaning first.
+- `ready` Confirm the web auth gate behaves correctly from both `localhost` and LAN-IP URLs after the dynamic API-host fallback change.
+- `ready` Validate end-to-end web auth again from the exact browser URL the user prefers to use (`localhost`, `127.0.0.1`, or LAN IP) now that LAN CORS is allowed.
+- `ready` Run one browser-level analyze smoke test from the LAN-IP web URL after the API bind-host fix, so the earlier `Failed to fetch` path is closed with UI evidence instead of only `curl`.
+- `ready` Run one browser-level analyze smoke test from `http://localhost:3001` after a hard refresh, to confirm the `localhost -> 127.0.0.1` API-host normalization clears the last `Failed to fetch` path in the actual UI.
+- `ready` Mirror the new web quick-selection UX into `apps/mobile` so long-sentence token marking is consistent between platforms.
+- `ready` Decide whether web quick-selection should get a second input affordance later, such as a tiny inline tick/marker directly on each token, or whether the current armed-status toolbar is enough after user QA.
+- `ready` Inspect a few more live explain payloads from the configured provider to catalog any remaining example-key variants beyond `translation_vi`, `meaning_vi`, `nghia_vi`, and `cau_trung`.
+- `ready` Inspect a few more live explain payloads from the configured provider to catalog any remaining example-key variants beyond `translation_vi`, `meaning_vi`, `nghia_vi`, `cau_trung`, and `hanzi`.
+- `done` Fix explain-example parsing for provider payloads that use `vi_du[].hanzi`, so explanation cards like `连续` stop falsely showing the missing-example placeholder.
+- `done` Re-run the exact long-paragraph analyze case in the live web tab after a manual hard refresh, so the browser UI is confirmed against the new backend splitting/timeout behavior and not only through direct API verification.
+- `done` Fix explain-example parsing for provider payloads that use `vi_du[].cau_trung` and `vi_du[].nghia_vi`, so web explanation cards stop falsely showing the missing-example placeholder.
+- `done` Add web quick-selection mode so the learner can arm one token status and click multiple words in sequence instead of reopening the status picker for every token.
+- `done` Fix the web analyze UI so multi-sentence provider output is navigable in-browser and no longer stops at only the first sentence.
+- `done` Fix remote explain normalization for provider payloads where `results[]` contains direct explanation items such as `连续`, instead of falling back to local placeholder text.
+- `done` Re-verify grouped-token analyze directly in the live in-app web tab at `http://127.0.0.1:3001` after reloading the current bundle, so the remote-AI path is confirmed at the visible UI layer and not only through direct API calls.
+- `done` Re-test the exact user flow `analyze -> review -> analyze` in the browser after the new local-API retry/fallback client patch, to confirm the intermittent post-review `Failed to fetch` no longer reproduces.
+- `ready` Improve the local fallback tokenizer/dictionary for sentences like `这个问题我来处理。` so degraded-mode analyze remains word-grouped when the remote AI provider is temporarily unreachable.
+- `ready` Investigate why the configured remote AI provider intermittently raises `httpx.ConnectError` from the local backend even though earlier live smoke checks succeeded.
+- `ready` Decide whether long clause-heavy analyze requests should surface a visible "đang xử lý lâu hơn bình thường" loading hint in web/mobile, because the sequential remote path now favors stability over speed on heavy paragraphs.
+- `ready` Decide whether long clause-heavy explain requests should surface a matching "đang xử lý lâu hơn bình thường" hint in web/mobile, because provider-backed explain for real work sentences can also take tens of seconds.
+- `ready` Add a small operator note or helper command that distinguishes "sandboxed API for local testing" from "unsandboxed API for live remote AI" so future sessions do not accidentally boot the wrong runtime mode.
+- `ready` Add a small operator note that the checked-in local default API port is now `8011` and that the production-style web preview must be rebuilt/restarted after changing that default, otherwise the browser can keep calling a stale port baked into the old bundle.
+- `ready` Validate Expo push registration end-to-end on a physical device or native simulator, since web preview cannot produce a real token.
+- `ready` Investigate the remaining `apps/web` Windows `next dev` EPERM writes under `.next/dev` so local hot-reload works again; production preview is currently the fallback.
+- `ready` Surface `healthz.ai_provider_mode` in the web/mobile status UI so a stale backend instance is visible during QA instead of looking like bad tokenization.
+- `ready` Add a small repair path for previously saved vocabulary rows that still contain old placeholder explain text from before the Vietnamese-field normalization fix.
+- `done` Add account-based auth, session restore, logout, and the gated review reveal flow across backend, web, and mobile.
+- `done` Fix the configured `AI_API_URL` in `apps/api/.env` so the live provider endpoint stops returning `404 Not Found`, then rerun `.\.venv\Scripts\python scripts\verify_live_ai_provider.py`.
+- `done` Restore the local browser smoke dependency for `scripts/mobile-web-smoke-test.cjs` or replace that script with a validation path that does not depend on an untracked `playwright` install.
+- `done` Configure `apps/api/.env` with a real `AI_API_KEY`, `AI_API_URL`, and `AI_MODEL`, then run a live `openai_compatible` analyze/explain verification.
+- `done` Remove or archive the remaining `han-note-ui-starter` residue after confirming nothing still depends on it.
+- `done` Add an `.env` example or operator note for the new `openai_compatible` AI provider settings so remote activation is repeatable.
+- `done` Replace the mobile dev placeholder push token flow with real `expo-notifications` registration.
+- `done` Implement a real AI provider adapter path with JSON coercion, schema validation, and short retry behavior behind the current local fallback provider.
+- `done` Normalize the `apps/mobile` dependency bootstrap so a clean install does not rely on the temporary `node_modules.incomplete-20260620` backup plus workspace junction.
+- `done` Replace the handwritten shared TS client with generated types/client derived from `packages/shared/openapi/han-note.openapi.json`.
+- `done` Restore mobile Expo web preview and run the mobile browser/device flow with screenshots/report.
+- `done` Run browser-level integrated QA for the live web flow and capture screenshots/report.
+- `done` Normalize repo structure and add root workspace/config files.
+- `done` Scaffold `apps/api` with FastAPI, SQLAlchemy, Alembic, and PostgreSQL wiring.
+- `done` Add first database migration for users, vocabulary, reviews, and notification settings.
+- `done` Implement analyze and explain APIs with the current local provider path and schema-backed responses.
+- `done` Implement vocabulary, review, settings, Telegram test, push-token registration, and reminder job surfaces in the backend.
+- `done` Create shared contract artifacts and export OpenAPI JSON.
+- `done` Replace mock data flows in `apps/web` with API-backed flows.
+- `done` Replace mock data flows in `apps/mobile` with API-backed flows.
+- `done` Run code-level validation and update continuity files with the first integrated code state.
+- `done` Bring up `apps/api/.venv`, install backend deps from that environment, run Alembic against Docker Postgres, and verify default-user bootstrap on a live DB.

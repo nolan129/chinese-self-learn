@@ -1,0 +1,12 @@
+alembic<2.0.0,>=1.13.2
+asyncpg<1.0.0,>=0.29.0
+fastapi<1.0.0,>=0.115.0
+greenlet<4.0.0,>=3.0.3
+httpx<1.0.0,>=0.27.0
+pydantic-settings<3.0.0,>=2.3.4
+sqlalchemy<3.0.0,>=2.0.32
+uvicorn[standard]<1.0.0,>=0.30.5
+
+[dev]
+pytest<9.0.0,>=8.3.2
+pytest-asyncio<1.0.0,>=0.24.0

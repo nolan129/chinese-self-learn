@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "H\u00e1n Note",
+    "slug": "han-note",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F6F4EF"
+      }
+    }
+  }
+}

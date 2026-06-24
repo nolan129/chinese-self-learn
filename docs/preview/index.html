@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hán Note UI Preview</title>
+    <style>
+      :root {
+        --bg: #f7f7f4;
+        --surface: #ffffff;
+        --surface-muted: #f0f2f1;
+        --ink: #171b1a;
+        --muted: #626b68;
+        --soft: #8a928f;
+        --line: #d8dedb;
+        --accent: #08756f;
+        --accent-strong: #045a55;
+        --accent-soft: #dff5f2;
+        --blue: #2f5f98;
+        --blue-soft: #e4eefb;
+        --amber: #a45d11;
+        --amber-soft: #fff0cf;
+        --red: #b42318;
+        --red-soft: #fde7e4;
+        --green: #19744d;
+        --green-soft: #ddf4e8;
+        --shadow: 0 18px 48px rgba(23, 27, 26, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      textarea,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .preview-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .preview-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 20px;
+      }
+
+      .preview-head h1 {
+        margin: 0;
+        font-size: 30px;
+        letter-spacing: 0;
+      }
+
+      .preview-head p {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+
+      .preview-tabs {
+        display: flex;
+        gap: 8px;
+      }
+
+      .preview-tabs button,
+      .btn {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        min-height: 40px;
+        background: var(--surface);
+        color: var(--ink);
+        padding: 9px 14px;
+        cursor: pointer;
+      }
+
+      .preview-tabs button.active,
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .canvas {
+        display: none;
+      }
+
+      .canvas.active {
+        display: block;
+      }
+
+      .web-frame,
+      .mobile-frame {
+        border: 1px solid var(--line);
+        background: var(--bg);
+        box-shadow: var(--shadow);
+      }
+
+      .web-frame {
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .topbar {
+        min-height: 68px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(247, 247, 244, 0.94);
+      }
+
+      .topbar-inner {
+        max-width: 1120px;
+        min-height: 68px;
+        margin: 0 auto;
+        padding: 0 18px;
+        display: grid;
+        grid-template-columns: 220px 1fr auto;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--ink);
+        color: white;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+      }
+
+      .brand strong,
+      .brand span {
+        display: block;
+      }
+
+      .brand span,
+      .muted,
+      .meta {
+        color: var(--muted);
+      }
+
+      .nav {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .nav button {
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        padding: 10px 12px;
+      }
+
+      .nav button.active {
+        background: var(--ink);
+        color: white;
+      }
+
+      .due-pill,
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        background: var(--surface-muted);
+        color: var(--muted);
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .due-pill {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        font-size: 13px;
+      }
+
+      .web-main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 28px 18px 42px;
+      }
+
+      .kicker {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      h2,
+      h3,
+      p {
+        letter-spacing: 0;
+      }
+
+      .page-title {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1.08;
+      }
+
+      .page-copy {
+        max-width: 680px;
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.58;
+      }
+
+      .workspace-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 18px;
+        margin-top: 22px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .panel.pad {
+        padding: 18px;
+      }
+
+      .panel-title {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .textarea {
+        width: 100%;
+        min-height: 175px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-top: 14px;
+        padding: 16px;
+        background: #fffdfa;
+        color: var(--ink);
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .form-row,
+      .actions,
+      .sentence-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .counter,
+      .meta {
+        color: var(--soft);
+        font-size: 12px;
+      }
+
+      .state-note {
+        margin-top: 14px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        padding: 12px;
+        line-height: 1.45;
+        font-size: 14px;
+      }
+
+      .snapshot-grid {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-muted);
+        padding: 14px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 30px;
+        line-height: 1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .sentence-card {
+        margin-top: 18px;
+        padding: 18px;
+      }
+
+      .sentence-zh {
+        margin: 0;
+        font-size: 42px;
+        line-height: 1.15;
+      }
+
+      .translation,
+      .natural {
+        margin: 8px 0 0;
+        line-height: 1.55;
+      }
+
+      .natural {
+        color: var(--muted);
+      }
+
+      .token-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .token {
+        min-width: 54px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        padding: 8px 10px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .token small {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .token.known {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .token.unknown {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .token.review {
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+      }
+
+      .sticky-action {
+        margin-top: 14px;
+        border-radius: 8px;
+        background: rgba(23, 27, 26, 0.96);
+        color: white;
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .below-grid {
+        display: grid;
+        grid-template-columns: 310px minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .word-heading {
+        margin: 0;
+        font-size: 52px;
+        line-height: 1.05;
+      }
+
+      .detail {
+        border-top: 1px solid var(--line);
+        margin-top: 16px;
+        padding-top: 16px;
+      }
+
+      .detail h4 {
+        margin: 0 0 7px;
+        color: var(--muted);
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      .detail p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.62;
+      }
+
+      .example {
+        border-radius: 8px;
+        background: var(--surface-muted);
+        padding: 14px;
+      }
+
+      .example .zh {
+        font-size: 21px;
+        color: var(--ink);
+      }
+
+      .mobile-wrap {
+        display: grid;
+        place-items: center;
+        padding: 20px 0 40px;
+      }
+
+      .mobile-frame {
+        width: min(390px, 100%);
+        height: 780px;
+        border-radius: 28px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .phone-screen {
+        height: 100%;
+        overflow: auto;
+        padding: 18px 16px 102px;
+      }
+
+      .phone-title {
+        margin: 0;
+        font-size: 30px;
+        line-height: 1.18;
+      }
+
+      .phone-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 16px;
+        margin-top: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .phone-input {
+        min-height: 150px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdfa;
+        margin-top: 12px;
+        padding: 14px;
+        font-size: 18px;
+      }
+
+      .phone-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .phone-zh {
+        font-size: 42px;
+        line-height: 1.18;
+        font-weight: 800;
+      }
+
+      .bottom-action,
+      .tabbar {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        border-radius: 8px;
+      }
+
+      .bottom-action {
+        bottom: 84px;
+        background: var(--ink);
+        color: white;
+        padding: 12px;
+      }
+
+      .tabbar {
+        bottom: 12px;
+        min-height: 64px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 6px;
+      }
+
+      .tabbar button {
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .tabbar button.active {
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+      }
+
+      @media (max-width: 900px) {
+        .preview-head,
+        .workspace-grid,
+        .below-grid {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .topbar-inner {
+          grid-template-columns: 1fr;
+          padding: 12px 18px;
+        }
+
+        .nav {
+          justify-content: flex-start;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="preview-shell">
+      <div class="preview-head">
+        <div>
+          <h1>Hán Note UI Preview</h1>
+          <p>Preview tĩnh cho web app và mobile app, không cần chạy Next/Expo.</p>
+        </div>
+        <div class="preview-tabs">
+          <button class="active" data-tab="web">Web app</button>
+          <button data-tab="mobile">Mobile app</button>
+        </div>
+      </div>
+
+      <section id="web" class="canvas active">
+        <div class="web-frame">
+          <header class="topbar">
+            <div class="topbar-inner">
+              <div class="brand">
+                <div class="brand-mark">汉</div>
+                <div>
+                  <strong>Hán Note</strong>
+                  <span>AI Chinese study desk</span>
+                </div>
+              </div>
+              <nav class="nav">
+                <button class="active">Phân tích</button>
+                <button>Ôn tập</button>
+                <button>Từ vựng</button>
+                <button>Cài đặt</button>
+              </nav>
+              <div class="due-pill"><strong>8</strong><span>từ cần ôn</span></div>
+            </div>
+          </header>
+
+          <div class="web-main">
+            <p class="kicker">Analyze</p>
+            <h2 class="page-title">Đọc hiểu đoạn tiếng Trung và chọn từ cần học</h2>
+            <p class="page-copy">
+              Dán một câu hoặc đoạn chat ngắn. Hán Note tách theo đơn vị có nghĩa, giải thích bằng tiếng Việt
+              và chỉ lưu những từ bạn chọn.
+            </p>
+
+            <div class="workspace-grid">
+              <div class="panel pad">
+                <h3 class="panel-title">Nội dung cần phân tích</h3>
+                <p class="muted">Dữ liệu phân tích là tạm thời. Câu nguồn chỉ được lưu khi bạn bật cho phép.</p>
+                <textarea class="textarea">你看见他吗？</textarea>
+                <div class="form-row">
+                  <span class="counter">5 / 2.000 ký tự</span>
+                  <div class="actions">
+                    <button class="btn">Xóa</button>
+                    <button class="btn primary">Phân tích</button>
+                  </div>
+                </div>
+                <div class="state-note">Không lưu toàn bộ đoạn chat đã dán. Chỉ từ bạn chọn học mới được lưu.</div>
+              </div>
+
+              <aside class="panel pad">
+                <h3 class="panel-title">Trạng thái hôm nay</h3>
+                <p class="muted">Ưu tiên ôn trước, sau đó thêm từ mới.</p>
+                <div class="snapshot-grid">
+                  <div class="stat"><strong>8</strong><span>từ cần ôn hôm nay</span></div>
+                  <div class="stat"><strong>128</strong><span>từ trong kho học</span></div>
+                  <div class="stat"><strong>6 phút</strong><span>ước tính phiên ôn</span></div>
+                </div>
+              </aside>
+            </div>
+
+            <article class="panel sentence-card">
+              <div class="sentence-header">
+                <div>
+                  <p class="sentence-zh">你看见他吗？</p>
+                  <p class="translation">Bạn có thấy anh ấy không?</p>
+                  <p class="natural">Người nói đang hỏi bạn có nhìn thấy hoặc gặp người đó không.</p>
+                </div>
+                <span class="badge">5 token · 4 học được</span>
+              </div>
+              <div class="token-row">
+                <span class="token known">你<small>ni</small></span>
+                <span class="token unknown">看见<small>kan jian</small></span>
+                <span class="token">他<small>ta</small></span>
+                <span class="token review">吗<small>ma</small></span>
+                <span class="token">？</span>
+              </div>
+            </article>
+
+            <div class="below-grid">
+              <aside class="panel pad">
+                <h3 class="panel-title">Ngữ cảnh câu</h3>
+                <p class="sentence-zh" style="font-size: 32px">你看见他吗？</p>
+                <p class="translation">Bạn có thấy anh ấy không?</p>
+                <div class="state-note">Chỉ token chưa biết hoặc muốn ôn lại được gửi sang bước giải nghĩa.</div>
+              </aside>
+              <article class="panel pad">
+                <h3 class="word-heading">看见</h3>
+                <p class="meta">kan jian · verb</p>
+                <div class="detail">
+                  <h4>Nghĩa</h4>
+                  <p>nhìn thấy, thấy được</p>
+                </div>
+                <div class="detail">
+                  <h4>Trong ngữ cảnh</h4>
+                  <p>Trong câu này, 看见他 nghĩa là nhìn thấy anh ấy hoặc có thấy anh ấy hay không.</p>
+                </div>
+                <div class="detail">
+                  <h4>Ví dụ</h4>
+                  <div class="example">
+                    <div class="zh">你看见我的手机吗？</div>
+                    <p class="meta">ni kan jian wo de shou ji ma</p>
+                    <p>Bạn có thấy điện thoại của tôi không?</p>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="sticky-action">
+              <span>Đã sẵn sàng lưu 2 từ vào kho học</span>
+              <button class="btn primary">Lưu và ôn ngay</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="mobile" class="canvas">
+        <div class="mobile-wrap">
+          <div class="mobile-frame">
+            <div class="phone-screen">
+              <p class="kicker">Học</p>
+              <h2 class="phone-title">Đọc chat tiếng Trung nhanh hơn</h2>
+              <p class="page-copy">Dán nội dung, chọn token cần học, rồi lưu vào lịch ôn.</p>
+
+              <div class="phone-card">
+                <h3 class="panel-title">Nội dung cần phân tích</h3>
+                <p class="muted">Không lưu toàn bộ đoạn chat. Chỉ lưu từ bạn chọn học.</p>
+                <div class="phone-input">你看见他吗？</div>
+                <div class="form-row" style="margin-top: 10px">
+                  <span class="counter">5 / 2.000 ký tự</span>
+                  <button class="btn primary">Phân tích</button>
+                </div>
+              </div>
+
+              <div class="phone-stats">
+                <div class="stat"><strong>8</strong><span>từ cần ôn</span></div>
+                <div class="stat"><strong>128</strong><span>từ đã lưu</span></div>
+              </div>
+
+              <div class="phone-card">
+                <div class="phone-zh">你看见他吗？</div>
+                <p class="translation">Bạn có thấy anh ấy không?</p>
+                <p class="muted">Người nói đang hỏi bạn có nhìn thấy hoặc gặp người đó không.</p>
+                <div class="token-row">
+                  <span class="token known">你<small>ni</small></span>
+                  <span class="token unknown">看见<small>kan jian</small></span>
+                  <span class="token">他<small>ta</small></span>
+                  <span class="token review">吗<small>ma</small></span>
+                  <span class="token">？</span>
+                </div>
+              </div>
+
+              <div class="phone-card">
+                <h3 class="word-heading" style="font-size: 42px">看见</h3>
+                <p class="meta">kan jian · verb</p>
+                <div class="detail">
+                  <h4>Nghĩa</h4>
+                  <p>nhìn thấy, thấy được</p>
+                </div>
+                <div class="example" style="margin-top: 12px">
+                  <div class="zh">你看见我的手机吗？</div>
+                  <p>Bạn có thấy điện thoại của tôi không?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bottom-action">
+              <strong>2 từ đã chọn để học</strong>
+              <button class="btn primary" style="width: 100%; margin-top: 10px">Giải nghĩa 2 từ</button>
+            </div>
+            <div class="tabbar">
+              <button class="active">Học</button>
+              <button>Ôn</button>
+              <button>Từ vựng</button>
+              <button>Cài đặt</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const buttons = document.querySelectorAll("[data-tab]");
+      const canvases = document.querySelectorAll(".canvas");
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          buttons.forEach((item) => item.classList.remove("active"));
+          canvases.forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+          document.getElementById(button.dataset.tab).classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

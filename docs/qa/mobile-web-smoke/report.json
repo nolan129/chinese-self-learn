@@ -1,0 +1,22 @@
+{
+  "baseUrl": "http://127.0.0.1:19006",
+  "screenshots": {
+    "home": "E:\\AI design\\Chinese-self-learn\\docs\\qa\\mobile-web-smoke\\01-home.png",
+    "analyze": "E:\\AI design\\Chinese-self-learn\\docs\\qa\\mobile-web-smoke\\02-analyze-result.png",
+    "explain": "E:\\AI design\\Chinese-self-learn\\docs\\qa\\mobile-web-smoke\\03-explain.png",
+    "review": "E:\\AI design\\Chinese-self-learn\\docs\\qa\\mobile-web-smoke\\04-review.png",
+    "vocabulary": "E:\\AI design\\Chinese-self-learn\\docs\\qa\\mobile-web-smoke\\05-vocabulary.png",
+    "settings": "E:\\AI design\\Chinese-self-learn\\docs\\qa\\mobile-web-smoke\\06-settings.png"
+  },
+  "steps": [
+    "loaded_home",
+    "analyze_success",
+    "explain_success",
+    "review_screen_loaded",
+    "review_empty_state",
+    "vocabulary_loaded",
+    "settings_loaded"
+  ],
+  "title": "Hán Note",
+  "status": "ok"
+}

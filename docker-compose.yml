@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: han-note-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: han_note
+      POSTGRES_USER: han_note
+      POSTGRES_PASSWORD: han_note
+    ports:
+      - "5432:5432"
+    volumes:
+      - han_note_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  han_note_postgres_data:

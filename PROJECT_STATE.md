@@ -1,0 +1,183 @@
+# PROJECT_STATE
+
+## Current Architecture
+
+- Repo root is the canonical Hán Note workspace.
+- The local workspace is now a Git repository on branch `main`, and `origin` is configured to `https://github.com/nolan129/chinese-self-learn.git`.
+- `apps/web` is the Next.js client and now uses the shared API client for analyze, explanation, vocabulary, review, and settings flows.
+- `apps/mobile` is the Expo client and now uses the same shared API contract through a monorepo-aware Metro config.
+- Mobile settings now include a native Expo push-token registration flow backed by `expo-notifications`.
+- `apps/api` is a FastAPI backend scaffold with async SQLAlchemy, Alembic, review logic, notification services, and an OpenAPI export script.
+- `packages/shared` contains the generated shared TypeScript contract plus exported OpenAPI artifacts.
+- Preview assets and handoff docs live under `docs/`.
+- Web and mobile now require login before the study, review, vocabulary, and settings surfaces render.
+- Backend CORS now accepts both loopback and common LAN development origins, so the web app can call auth APIs even when opened via a machine IP such as `192.168.x.x`.
+- The web client now derives its default API host from `window.location.hostname` when `NEXT_PUBLIC_API_BASE_URL` is unset, and auth restore falls back out of the loading screen after a short timeout instead of hanging indefinitely.
+- Local API development should now be started on `127.0.0.1:8011` for this workstation, and the unsandboxed no-reload runtime is the reliable path when the web app needs live remote AI instead of local fallback behavior.
+- The web client now normalizes `localhost` and IPv6 loopback hostnames to `127.0.0.1` before calling the API, because this workstation's backend runtime currently answers on IPv4 loopback while `localhost` requests can fail at the browser fetch layer.
+- The web client now retries browser-side network failures across a small ordered set of local API roots (`preferred host`, `127.0.0.1`, `localhost`, and the current hostname when relevant) and remembers the last host that succeeded.
+- The local backend must be run outside the Codex sandbox when the app should call the live remote AI provider; the sandboxed API process can serve auth/data routes but can fall back to local tokenization because outbound provider connections are blocked.
+- Remote analyze now splits multiline input into sentence-sized chunks and uses a longer per-request timeout for clause-heavy text, processed sequentially so the live provider does not fall back on longer work-style paragraphs.
+- The web analyze surface now preserves every provider-returned sentence, exposes sentence navigation (`Câu 1`, `Câu 2`, ...), and builds explain payloads from selected tokens across all analyzed sentences instead of only `sentences[0]`.
+- The web analyze surface now also supports a quick-selection mode: the learner can arm one status (`Đã biết`, `Chưa biết`, `Muốn ôn lại`, `Bỏ qua`) and then click multiple tokens in sequence without reopening the per-token picker each time.
+- Remote explain normalization now accepts provider payloads where `results[]` contains direct token explanation items, plus additional aliases such as `loai_tu` and example-level `meaning_vi`.
+- Remote explain normalization now also accepts example-item aliases such as `cau_trung` and `nghia_vi`, so provider-backed examples are preserved instead of falling back to the "Provider chưa trả ví dụ cho từ này." placeholder.
+- Remote explain normalization now also accepts example-item `hanzi` as the Chinese example sentence field, covering another live provider variant that previously still triggered the missing-example placeholder on words such as `连续`.
+
+## Current Milestone
+
+- Account-based auth is now integrated across backend, web, and mobile, with the review flow updated to a gated reveal step. Current focus is live QA for first-user seed-data migration and native-device verification for mobile auth/push behavior, while browser QA has also moved into long-text analyze/explain stability and Windows local-dev runtime ergonomics.
+
+## What Exists Now
+
+- Root continuity system: `AGENTS.md`, `PROJECT_STATE.md`, `NEXT_STEPS.md`, `DECISIONS.md`.
+- Local Git bootstrap is in place: repository recognized under `main`, `origin` points to `nolan129/chinese-self-learn`, and this workstation's Codex sandbox user is whitelisted through Git `safe.directory` for this path.
+- Monorepo layout with `apps/web`, `apps/mobile`, `apps/api`, `packages/shared`, and `docs/`.
+- Docker Compose PostgreSQL definition at repo root.
+- Local backend runtime at `apps/api/.venv`, created successfully from the bundled Codex Python runtime.
+- First FastAPI backend pass with:
+  - `GET /healthz`
+  - auth endpoints for register/login/refresh/logout/me
+  - analyze/explain endpoints
+  - vocabulary CRUD endpoints
+  - review endpoints
+  - notification settings and registration endpoints
+  - initial Alembic migration and default-user bootstrap
+- Backend auth and account scope now include:
+  - `users.email`, `users.password_hash`, `users.is_seed`, `users.last_login_at`
+  - `user_sessions` for multi-device refresh-token sessions
+  - bearer-token protection on user-bound APIs
+  - first-real-user migration of seed-owned vocabulary, review logs, and notification data
+- Backend AI integration now supports:
+  - local fallback tokenization/explanation provider for dev mode
+  - configurable `openai_compatible` remote provider path
+  - JSON coercion from raw/fenced model output
+  - schema validation plus short retry on malformed provider responses
+  - compatibility fallbacks for provider-specific base URLs and variant analyze/explain payload shapes
+  - analyze-time backfill of known token `pinyin` and `meaning_vi_brief` when the remote payload omits those fields for dictionary-covered words
+  - explain-time normalization for provider payloads that use Vietnamese field names such as `nghia_tieng_viet`, `nghia_trong_ngu_canh`, `tu_loai`, `ghi_chu_su_dung`, and `vi_du`
+- Exported OpenAPI JSON at `packages/shared/openapi/han-note.openapi.json`.
+- Shared TS client/types at `packages/shared/src/han-note.ts`, generated from `packages/shared/openapi/han-note.openapi.json`.
+- Shared client generator at `scripts/generate-shared-client.mjs`.
+- Web flow wired to real API contract for analyze -> explain -> save -> review -> settings.
+- Web auth now includes login/register gating, refresh-token restore from browser storage, account logout from Settings, a tab favicon at `apps/web/app/icon.svg`, and the gated `Đã biết` / `Chưa biết` review reveal step.
+- Web analyze input now opens empty instead of pre-filling a sample sentence, and the review card now asks for the final 4-level score first.
+- Web analyze now supports multi-sentence navigation after one analyze request, so long paragraphs split into multiple provider-backed sentences can be reviewed sentence by sentence in the UI.
+- Web analyze now supports both detailed per-token selection and quick status assignment for long sentences, reducing repeated clicks when marking many known/unknown tokens in one pass.
+- Mobile flow wired to the same API contract for learn/review/vocabulary/settings.
+- Mobile auth now includes login/register gating, refresh-token restore through `expo-secure-store`, account logout from Settings, and the same score-first review reveal step as web.
+- Mobile dependency bootstrap helpers at `scripts/bootstrap-mobile-node-modules.cjs` and `scripts/run-mobile-expo.cjs`.
+- Mobile native push helper at `apps/mobile/src/lib/pushNotifications.ts`, with Settings wired to register and persist Expo push tokens through the backend.
+- Backend operator docs now cover the `openai_compatible` AI provider settings in `apps/api/.env.example` and `apps/api/README.md`.
+- Live AI provider verification script now exists at `apps/api/scripts/verify_live_ai_provider.py`.
+- Automated web smoke test at `scripts/web-smoke-test.cjs`, with screenshots and `report.json` under `docs/qa/web-smoke`.
+- Mobile Expo web launcher scaffold at `scripts/start-mobile-web.cjs`.
+- Mobile Expo web smoke harness at `scripts/mobile-web-smoke-test.cjs`, with screenshots and `report.json` under `docs/qa/mobile-web-smoke`.
+- Root dev dependency `playwright` is restored so the checked-in mobile smoke harness can run again.
+- `apps/web/next.config.mjs` now disables Next's experimental dist-dir lock on this workstation.
+- `GET /healthz` now reports `ai_provider_mode` so the running backend instance exposes whether it is using `remote_ai` or `local_fallback`.
+- The web explanation screen now keeps source-sentence context per selected token and saves vocabulary using the sentence where that token actually appeared.
+- The web explanation screen now renders provider-backed examples again for payload variants that use `cau_trung` / `nghia_vi`, not just `chinese` / `translation_vi`.
+- The web explanation screen now also renders provider-backed examples for payload variants that use `hanzi` + `nghia_vi`, verified live on the `连续` explanation card in the browser tab at `http://127.0.0.1:3001`.
+- Local auth/network debugging confirmed that `Failed to fetch` on login was caused by CORS rejection when the web preview was opened from a LAN IP instead of `localhost` or `127.0.0.1`.
+- Static previews under `docs/preview`.
+- Archived starter residue note at `docs/archive/han-note-ui-starter/README.md`.
+- Product handoff and UI handoff documents under `docs/handoff` and `docs/ui-design-handoff.md`.
+- Live local services currently verified:
+  - web preview at `http://127.0.0.1:3001` via `next start` after a successful build
+  - API at `http://127.0.0.1:8011`
+  - mobile web preview at `http://127.0.0.1:19006`
+  - PostgreSQL via Docker on `localhost:5432`
+
+## Known Blockers
+
+- Real Expo push token registration still needs validation on a physical device or native simulator; web preview only exercises the unsupported-message path.
+- The first live registration path that migrates seed-owned MVP data into the first real account has not been executed against the shared local Postgres database yet, because doing so would permanently consume the seed data for that environment.
+- `apps/web` hot-reload via `next dev` is still blocked on this Windows machine by `EPERM` writes inside `.next/dev` even after disabling `experimental.lockDistDir`; production preview via `next build --webpack` + `next start` works.
+
+## Validation Snapshot
+
+- `python -m py_compile` passed for the backend entrypoints and core services on 2026-06-19.
+- `pytest tests/test_ai_provider.py tests/test_review_logic.py tests/test_text_service.py` passed: 7 tests.
+- Web TypeScript check passed.
+- Mobile TypeScript check passed.
+- `npm run build` passed in `apps/web` after switching the production build script to `next build --webpack` for Windows compatibility.
+- OpenAPI export succeeded to `packages/shared/openapi/han-note.openapi.json`.
+- `docker compose up -d` succeeded and Postgres accepted connections on 2026-06-19.
+- `apps/api/.venv` was recreated successfully using the bundled Codex Python runtime, and `.venv\Scripts\python -m pip install -e .[dev]` completed after fixing package discovery.
+- `.venv\Scripts\python -m alembic upgrade head` succeeded against the live local Postgres database.
+- `GET /healthz` returned `{"status":"ok"}` from the live API.
+- `GET /api/notification-settings` and `GET /api/reviews/today` returned successful live responses.
+- Default user bootstrap was verified in PostgreSQL with user ID `00000000-0000-0000-0000-000000000001`.
+- Direct HTTP flow verify passed for analyze -> explain -> save vocabulary -> dedupe -> review submit against the live API.
+- Browser-level web smoke QA passed against the live stack on 2026-06-20 with screenshots saved under `docs/qa/web-smoke`.
+- Backend CORS preflight for `http://127.0.0.1:3001` now succeeds for `/api/analyze` after adding `CORSMiddleware` and explicit local dev origins.
+- `scripts/start-mobile-web.cjs` and `scripts/mobile-web-smoke-test.cjs` both pass `node --check`.
+- Browser-level mobile web smoke QA passed against the live stack on 2026-06-20 with screenshots saved under `docs/qa/mobile-web-smoke`.
+- `scripts/generate-shared-client.mjs` regenerated `packages/shared/src/han-note.ts` successfully from the exported OpenAPI artifact on 2026-06-20.
+- Mobile TypeScript check passed after switching to the generated shared client surface.
+- `npm run build --workspace apps/web` passed after switching to the generated shared client surface.
+- Direct `tsc -p apps/web/tsconfig.json --noEmit` is still blocked by the repo's existing `target: "es5"` deprecation warning under the current TypeScript runtime, which is separate from the shared-client change.
+- `scripts/bootstrap-mobile-node-modules.cjs`, `scripts/run-mobile-expo.cjs`, and `scripts/start-mobile-web.cjs` all pass `node --check`.
+- `apps/mobile/package-lock.json` and the temporary QA backup `apps/mobile/node_modules.incomplete-20260620` were removed on 2026-06-20.
+- `apps/mobile/node_modules` is now a normal directory containing targeted compatibility links to the hoisted root dependencies instead of a full-workspace junction.
+- Browser-level mobile web smoke QA passed again on 2026-06-20 after the bootstrap cleanup, with the current report at `docs/qa/mobile-web-smoke/report.json`.
+- `.\.venv\Scripts\python -m py_compile app\integrations\ai\provider.py app\core\settings.py tests\test_ai_provider.py` passed on 2026-06-20.
+- `.\.venv\Scripts\python -m pytest tests/test_ai_provider.py tests/test_review_logic.py tests/test_text_service.py` passed on 2026-06-20: 10 tests.
+- Backend AI provider tests now cover local fallback behavior, fenced JSON coercion, remote retry on malformed output, and fallback to local mode when remote config is incomplete.
+- `npm install --workspace apps/mobile expo-notifications expo-device expo-constants` succeeded on 2026-06-20, with React Native engine warnings under Node `v22.4.1`.
+- `node scripts/bootstrap-mobile-node-modules.cjs` passed on 2026-06-20 after updating the bootstrap helper to derive links from `apps/mobile/package.json`.
+- `curl http://127.0.0.1:19006/apps/mobile/node_modules/expo/AppEntry.bundle?...` returned the compiled Metro bundle on 2026-06-20 after adding the native push registration code.
+- `apps/api/.env.example` now includes `AI_MODEL`, `AI_TIMEOUT_SECONDS`, and `AI_MAX_RETRIES`, and `apps/api/README.md` documents how to switch from `AI_PROVIDER=dev` to `AI_PROVIDER=openai_compatible`.
+- `python render_preview.py` passed from `docs/preview` on 2026-06-20 after removing the hard-coded dependency on the deleted starter preview path.
+- Root starter residue at `han-note-ui-starter/` was archived into `docs/archive/han-note-ui-starter/README.md` and removed from the repo root on 2026-06-20.
+- `.\.venv\Scripts\python scripts\verify_live_ai_provider.py` was added as a repeatable live-provider smoke check on 2026-06-20.
+- Live remote AI verification now passes outside the sandbox on 2026-06-20, returning the expected tokenization for `你 / 看见 / 他 / 吗 / ？` and one explanation item for `看见`.
+- `npm install --save-dev playwright` restored the local browser dependency for the mobile smoke harness on 2026-06-20.
+- `node scripts/mobile-web-smoke-test.cjs` passed again on 2026-06-20, and `docs/qa/mobile-web-smoke/report.json` is back to status `ok`.
+- The latest `.\.venv\Scripts\python scripts\verify_live_ai_provider.py` run returned `status: ok` against host `cc.zhihuiapi.com` and model `gpt-5.4` on 2026-06-20.
+- `npm run build --workspace apps/web` passed again on 2026-06-20 after adding `experimental.lockDistDir: false` to `apps/web/next.config.mjs`.
+- `node ..\..\node_modules\next\dist\bin\next start --port 3001` now serves the web app successfully on 2026-06-20, and `curl http://127.0.0.1:3001` returned the rendered Hán Note HTML.
+- The local API on `http://127.0.0.1:8000` was restarted on 2026-06-20 after `.env` had already been switched to the remote AI provider; `POST /api/analyze` now verifies `ai_provider_mode = remote_ai` and returns grouped tokens such as `这个 / 问题 / 我 / 来 / 处理 / 。`.
+- `POST /api/explain-tokens` for live tokens such as `刷新` now returns populated `meaning_vi`, `meaning_in_context_vi`, `part_of_speech`, `usage_note_vi`, and `examples` instead of provider placeholders.
+- End-to-end save and review verification now passes again on 2026-06-20: saving `刷新` through `/api/vocabulary` creates a due review item, and `/api/reviews/today` returns it with the corrected meaning and example text.
+- `.venv\Scripts\python -m py_compile app\api\routes.py app\schemas\auth.py app\services\auth.py tests\test_auth_service.py` passed on 2026-06-20.
+- `.venv\Scripts\python -m pytest tests/test_auth_service.py tests/test_ai_provider.py tests/test_review_logic.py tests/test_text_service.py` passed on 2026-06-20: 19 tests.
+- `node .\node_modules\typescript\bin\tsc -p apps/mobile/tsconfig.json --noEmit` passed on 2026-06-20 after the auth/mobile changes.
+- `npm run build --workspace apps/web` passed on 2026-06-20 after adding the web auth gate, review reveal gate, and favicon.
+- `.venv\Scripts\python scripts\export_openapi.py` and `node scripts/generate-shared-client.mjs` both passed on 2026-06-20 after the auth contract changes.
+- The local API was restarted on 2026-06-20 and now returns `401` for unauthenticated `GET /api/auth/me`, confirming the auth routes are live on `http://127.0.0.1:8000`.
+- The local web preview was restarted on 2026-06-20 at `http://127.0.0.1:3001`, and the rendered HTML now includes the auth-loading shell plus `<link rel="icon" href="/icon.svg">`.
+- `.venv\Scripts\python -m py_compile app\core\settings.py app\main.py tests\test_settings.py` passed on 2026-06-23.
+- `.venv\Scripts\python -m pytest tests/test_settings.py tests/test_auth_service.py tests/test_ai_provider.py tests/test_review_logic.py tests/test_text_service.py` passed on 2026-06-23: 21 tests.
+- `OPTIONS /api/auth/login` now returns `200 OK` with `Access-Control-Allow-Origin` for `http://192.168.1.9:3001` and `http://10.0.0.25:3001` after the LAN-origin CORS fix on 2026-06-23.
+- `npm run build --workspace apps/web` passed on 2026-06-23 after removing the default sample text from the web analyze screen and changing review to submit `Nhớ` / `Dễ` immediately while revealing meaning only for `Chưa nhớ` / `Cần ôn tập`.
+- `node .\node_modules\typescript\bin\tsc -p apps/mobile/tsconfig.json --noEmit` passed on 2026-06-23 after syncing the same review flow in the mobile client.
+- `npm run build --workspace apps/web` passed again on 2026-06-23 after switching the web default API base from hard-coded `127.0.0.1` to the current browser hostname and adding a 5-second auth-restore timeout.
+- The web preview was restarted on 2026-06-23 at `http://localhost:3001` and `http://192.168.1.9:3001` so the new client bundle is now live.
+- `curl http://127.0.0.1:8010/healthz` returned `{"status":"ok","ai_provider_mode":"remote_ai"}` on 2026-06-23 after moving the local API off port `8000`.
+- A full direct API cycle also passed on 2026-06-23 for `register -> analyze -> save vocabulary -> review submit -> review complete -> analyze again`, confirming the backend/session path stays healthy after review completion.
+- `.\.venv\Scripts\python -m pytest tests\test_ai_provider.py` passed on 2026-06-23: 11 tests.
+- `npm run build --workspace apps/web` passed again on 2026-06-23 after moving the default API port to `8010`.
+- Browser-level repro on 2026-06-23 confirmed that `analyze -> review -> analyze` now completes without `Failed to fetch` after restarting the API cleanly on `8010`; when the remote provider is unreachable, the backend falls back to local analyze output instead of returning `500`.
+- A direct authenticated `POST /api/analyze` on 2026-06-23 returned grouped remote-provider tokens for `这个 / 问题 / 我 / 来 / 处理 / 。` after restarting the API outside the sandbox on `127.0.0.1:8010`.
+- A live in-app browser verify on 2026-06-23 against `http://127.0.0.1:3001` confirmed the current web UI also renders grouped tokens with pinyin (`这个 / 问题 / 我 / 来 / 处理 / 。`) after reloading the tab; the earlier `Đang phân tích...` view came from a stale browser-runtime snapshot, not from a real product regression.
+- `.venv\Scripts\python -m py_compile app\integrations\ai\provider.py tests\test_ai_provider.py` passed on 2026-06-24 after adding long-text remote analyze splitting and adaptive timeout handling.
+- `.venv\Scripts\python -m pytest tests\test_ai_provider.py` passed on 2026-06-24: 14 tests.
+- A direct authenticated `POST /api/analyze` on 2026-06-24 for the user's long two-sentence paragraph about `陪玩师` returned 2 provider-backed sentences with grouped tokens instead of the old local fallback translation and character-by-character tokenization.
+- `npm run build --workspace apps/web` passed on 2026-06-24 after rebuilding the web bundle to use the current default API port `8011`.
+- `.venv\Scripts\python -m py_compile app\integrations\ai\provider.py tests\test_ai_provider.py` passed again on 2026-06-24 after extending explain normalization for direct `results[]` payload items, `loai_tu`, and example-level `meaning_vi`.
+- `.venv\Scripts\python -m pytest tests\test_ai_provider.py` passed again on 2026-06-24: 17 tests.
+- Live in-app browser QA on 2026-06-24 confirmed that the long `陪玩师` paragraph now shows `Câu 1` and `Câu 2` navigation in the web UI, and selecting `连续` now returns provider-backed Vietnamese meaning/context instead of the old local fallback placeholder text.
+- `npm run build --workspace apps/web` passed again on 2026-06-24 after adding the web quick-selection toolbar for token statuses.
+- Live in-app browser QA on 2026-06-24 confirmed that web quick-selection works: after arming `Chưa biết`, clicking `看见` and `吗` in `你看见他吗？` immediately marked both tokens without reopening the per-token picker.
+- `.venv\Scripts\python -m py_compile app\integrations\ai\provider.py tests\test_ai_provider.py` passed on 2026-06-25 after extending example parsing to cover `cau_trung` and `nghia_vi`.
+- `.venv\Scripts\python -m pytest tests\test_ai_provider.py` passed on 2026-06-25: 18 tests.
+- Direct provider payload inspection on 2026-06-25 confirmed that some live explain responses do contain examples, but under `vi_du[].cau_trung` and `vi_du[].nghia_vi`; the earlier parser dropped those fields and incorrectly showed the web fallback "Provider chưa trả ví dụ cho từ này."
+- Live in-app browser QA on 2026-06-25 confirmed the fix: explaining `看见` and `吗` in `你看见他吗？` now shows real example sentences and Vietnamese translations instead of the old placeholder text.
+- `.venv\Scripts\python -m py_compile app\integrations\ai\provider.py tests\test_ai_provider.py` passed again on 2026-06-25 after extending example parsing to cover `hanzi`.
+- `.venv\Scripts\python -m pytest tests\test_ai_provider.py` passed again on 2026-06-25: 19 tests.
+- Direct provider payload inspection on 2026-06-25 confirmed another live explain-example variant where the Chinese example sentence arrives under `vi_du[].hanzi`; the earlier parser dropped that field and still showed the web placeholder for some tokens such as `连续`.
+- Live in-app browser QA on 2026-06-25 confirmed the follow-up fix: explaining `连续` in `这个陪玩师有过连续拒绝新用户订单的情况。` now shows real provider-backed examples instead of `Provider chưa trả ví dụ cho từ này.`
+- `git status --short --branch` now resolves cleanly on 2026-06-25 after adding `E:/AI design/Chinese-self-learn` to Git `safe.directory`.
+- `git remote -v` and `git branch --show-current` confirmed on 2026-06-25 that the local repo is on `main` and `origin` points to `https://github.com/nolan129/chinese-self-learn.git`.
