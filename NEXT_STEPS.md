@@ -3,7 +3,7 @@
 ## Backlog
 
 - `ready` Validate the first real account registration path on an isolated database or with a user-approved first account, so the seed-data migration can be confirmed without consuming the shared local seed state by accident.
-- `ready` Authenticate GitHub locally on this workstation (`gh auth login` or SSH) and perform the first commit/push to `origin/main`, now that local git bootstrap and remote wiring are in place.
+- `done` Authenticate GitHub locally on this workstation and perform the first commit/push to `origin/main`, now that local git bootstrap and remote wiring are in place.
 - `ready` Manually QA the new web auth flow end-to-end: register/login/logout -> analyze -> save -> gated review -> settings.
 - `ready` Manually QA the new mobile auth/session-restore flow on Expo runtime, including the gated review reveal and account-scoped vocabulary/review data.
 - `ready` Manually QA the updated review UX copy and scoring order to confirm `Nhớ` / `Dễ` submit directly while `Chưa nhớ` / `Cần ôn tập` reveal meaning first.
@@ -11,7 +11,7 @@
 - `ready` Validate end-to-end web auth again from the exact browser URL the user prefers to use (`localhost`, `127.0.0.1`, or LAN IP) now that LAN CORS is allowed.
 - `ready` Run one browser-level analyze smoke test from the LAN-IP web URL after the API bind-host fix, so the earlier `Failed to fetch` path is closed with UI evidence instead of only `curl`.
 - `ready` Run one browser-level analyze smoke test from `http://localhost:3001` after a hard refresh, to confirm the `localhost -> 127.0.0.1` API-host normalization clears the last `Failed to fetch` path in the actual UI.
-- `ready` Mirror the new web quick-selection UX into `apps/mobile` so long-sentence token marking is consistent between platforms.
+- `done` Mirror the new web quick-selection UX into `apps/mobile` so long-sentence token marking is consistent between platforms.
 - `ready` Decide whether web quick-selection should get a second input affordance later, such as a tiny inline tick/marker directly on each token, or whether the current armed-status toolbar is enough after user QA.
 - `ready` Inspect a few more live explain payloads from the configured provider to catalog any remaining example-key variants beyond `translation_vi`, `meaning_vi`, `nghia_vi`, and `cau_trung`.
 - `ready` Inspect a few more live explain payloads from the configured provider to catalog any remaining example-key variants beyond `translation_vi`, `meaning_vi`, `nghia_vi`, `cau_trung`, and `hanzi`.

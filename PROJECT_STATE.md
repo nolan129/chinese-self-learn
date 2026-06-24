@@ -64,8 +64,10 @@
 - Web analyze input now opens empty instead of pre-filling a sample sentence, and the review card now asks for the final 4-level score first.
 - Web analyze now supports multi-sentence navigation after one analyze request, so long paragraphs split into multiple provider-backed sentences can be reviewed sentence by sentence in the UI.
 - Web analyze now supports both detailed per-token selection and quick status assignment for long sentences, reducing repeated clicks when marking many known/unknown tokens in one pass.
+- Mobile analyze now also supports quick status assignment for long token lists, while keeping the existing bottom-sheet picker for detailed per-token marking when quick mode is off.
 - Mobile flow wired to the same API contract for learn/review/vocabulary/settings.
 - Mobile auth now includes login/register gating, refresh-token restore through `expo-secure-store`, account logout from Settings, and the same score-first review reveal step as web.
+- Mobile analyze selection UX is now aligned more closely with web: a learner can arm `Đã biết`, `Chưa biết`, `Muốn ôn lại`, or `Bỏ qua` and then tap multiple tokens in sequence without reopening the bottom sheet each time.
 - Mobile dependency bootstrap helpers at `scripts/bootstrap-mobile-node-modules.cjs` and `scripts/run-mobile-expo.cjs`.
 - Mobile native push helper at `apps/mobile/src/lib/pushNotifications.ts`, with Settings wired to register and persist Expo push tokens through the backend.
 - Backend operator docs now cover the `openai_compatible` AI provider settings in `apps/api/.env.example` and `apps/api/README.md`.
@@ -179,5 +181,6 @@
 - `.venv\Scripts\python -m pytest tests\test_ai_provider.py` passed again on 2026-06-25: 19 tests.
 - Direct provider payload inspection on 2026-06-25 confirmed another live explain-example variant where the Chinese example sentence arrives under `vi_du[].hanzi`; the earlier parser dropped that field and still showed the web placeholder for some tokens such as `连续`.
 - Live in-app browser QA on 2026-06-25 confirmed the follow-up fix: explaining `连续` in `这个陪玩师有过连续拒绝新用户订单的情况。` now shows real provider-backed examples instead of `Provider chưa trả ví dụ cho từ này.`
+- `node .\node_modules\typescript\bin\tsc -p apps/mobile/tsconfig.json --noEmit` passed on 2026-06-25 after adding the mobile quick-selection toolbar and token-tap status flow.
 - `git status --short --branch` now resolves cleanly on 2026-06-25 after adding `E:/AI design/Chinese-self-learn` to Git `safe.directory`.
 - `git remote -v` and `git branch --show-current` confirmed on 2026-06-25 that the local repo is on `main` and `origin` points to `https://github.com/nolan129/chinese-self-learn.git`.

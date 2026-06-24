@@ -502,3 +502,18 @@ The user created a GitHub repository for Hán Note and wants future Codex sessio
 
 - Future Codex sessions can interact with the local Git repository without hitting the ownership guard first.
 - The remaining prerequisite for automated push flows is GitHub authentication on this workstation, not repo wiring.
+
+### Context
+
+The web analyze flow already had a quick-selection toolbar for long sentences, but mobile still forced the learner to tap one token, open the bottom sheet, choose a status, then repeat. That mismatch was especially costly on work-style sentences with many tokens to classify quickly.
+
+### Decision
+
+- Keep the existing mobile bottom sheet for detailed single-token marking when no bulk mode is armed.
+- Add a mobile quick-selection toolbar with the same four statuses as web: `known`, `unknown`, `review`, and `ignored`.
+- When quick mode is armed, make token taps apply the status immediately instead of reopening the bottom sheet.
+
+### Consequence
+
+- Mobile now supports the same fast bulk-marking workflow as web for long token lists.
+- The detailed bottom-sheet flow still exists for careful one-token-at-a-time classification, so the new UX adds speed without removing precision.

@@ -41,6 +41,13 @@ type ReviewSummary = {
   easy: number;
 };
 
+const QUICK_STATUS_OPTIONS: Array<{ status: TokenStatus; label: string }> = [
+  { status: "known", label: "Đã biết" },
+  { status: "unknown", label: "Chưa biết" },
+  { status: "review", label: "Muốn ôn lại" },
+  { status: "ignored", label: "Bỏ qua" }
+];
+
 export default function App() {
   const [authStatus, setAuthStatus] = useState<"loading" | "signed_out" | "signed_in">("loading");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -477,20 +484,41 @@ function AnalyzeResult({
   const [selected, setSelected] = useState<Token | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
+  const [quickStatusMode, setQuickStatusMode] = useState<TokenStatus | null>(null);
 
   const selectedCount = useMemo(
     () => tokens.filter((item) => item.status === "unknown" || item.status === "review").length,
     [tokens]
   );
 
-  function updateToken(status: TokenStatus) {
-    if (!selected) return;
+  function applyTokenStatus(tokenIndex: number, status: TokenStatus) {
     setTokens(
       tokens.map((item) =>
-        item.token_index === selected.token_index ? { ...item, status } : item
+        item.token_index === tokenIndex ? { ...item, status } : item
       )
     );
     setSelected(null);
+  }
+
+  function updateToken(status: TokenStatus) {
+    if (!selected) return;
+    applyTokenStatus(selected.token_index, status);
+  }
+
+  function handleQuickModeToggle(status: TokenStatus) {
+    setQuickStatusMode((current) => (current === status ? null : status));
+    setSelected(null);
+  }
+
+  function handleTokenPress(token: Token) {
+    if (!token.is_learnable || token.token_type === "punctuation") {
+      return;
+    }
+    if (quickStatusMode) {
+      applyTokenStatus(token.token_index, quickStatusMode);
+      return;
+    }
+    setSelected(token);
   }
 
   async function explain() {
@@ -555,12 +583,59 @@ function AnalyzeResult({
         <Text style={styles.translation}>{sentence.translation_vi}</Text>
         <Text style={styles.muted}>{sentence.natural_explanation_vi}</Text>
 
+        <View style={styles.quickToolbar}>
+          <Text style={styles.quickToolbarTitle}>Chọn nhanh</Text>
+          <Text style={styles.quickToolbarCopy}>
+            {quickStatusMode
+              ? "Đang bật chọn nhanh. Bấm trực tiếp vào token để gán trạng thái."
+              : "Bật một chế độ rồi bấm liên tiếp vào token, hoặc chạm từng từ để mở bảng chọn chi tiết."}
+          </Text>
+          <View style={styles.quickToolbarActions}>
+            {QUICK_STATUS_OPTIONS.map((option) => {
+              const isActive = quickStatusMode === option.status;
+              return (
+                <Pressable
+                  key={option.status}
+                  onPress={() => handleQuickModeToggle(option.status)}
+                  style={[
+                    styles.quickOption,
+                    isActive && styles.quickOptionActive,
+                    isActive && option.status === "known" && styles.quickOptionKnown,
+                    isActive && option.status === "unknown" && styles.quickOptionUnknown,
+                    isActive && option.status === "review" && styles.quickOptionReview,
+                    isActive && option.status === "ignored" && styles.quickOptionIgnored
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.quickOptionText,
+                      isActive && styles.quickOptionTextActive,
+                      isActive && option.status === "known" && styles.quickOptionTextKnown,
+                      isActive && option.status === "unknown" && styles.quickOptionTextUnknown,
+                      isActive && option.status === "review" && styles.quickOptionTextReview,
+                      isActive && option.status === "ignored" && styles.quickOptionTextIgnored
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
         <View style={styles.tokenWrap}>
           {tokens.map((token) => (
-            <TokenChip key={token.token_index} token={token} onPress={() => setSelected(token)} />
+            <TokenChip key={token.token_index} token={token} onPress={() => handleTokenPress(token)} />
           ))}
         </View>
       </Card>
+
+      <Text style={styles.selectionHint}>
+        {quickStatusMode
+          ? "Chế độ chọn nhanh đang bật. Chạm trực tiếp vào token để gán trạng thái hiện tại."
+          : "Chạm vào từng token để mở bảng chọn chi tiết, hoặc dùng thanh chọn nhanh ở trên."}
+      </Text>
 
       <View style={styles.actionBar}>
         <Text style={styles.actionText}>{selectedCount} từ đã chọn để học</Text>
@@ -572,7 +647,12 @@ function AnalyzeResult({
       </View>
       {error ? <Text style={styles.warning}>{error}</Text> : null}
 
-      <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
+      <Modal
+        visible={!!selected && !quickStatusMode}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelected(null)}
+      >
         <Pressable style={styles.sheetBackdrop} onPress={() => setSelected(null)} />
         <View style={styles.sheet}>
           {selected ? (
@@ -1347,11 +1427,83 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0
   },
+  quickToolbar: {
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    padding: 12,
+    gap: 8
+  },
+  quickToolbarTitle: {
+    color: colors.text,
+    fontWeight: "800"
+  },
+  quickToolbarCopy: {
+    color: colors.textMuted,
+    lineHeight: 20
+  },
+  quickToolbarActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  quickOption: {
+    minHeight: 38,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  quickOptionActive: {
+    borderColor: "transparent"
+  },
+  quickOptionKnown: {
+    backgroundColor: colors.blueSoft
+  },
+  quickOptionUnknown: {
+    backgroundColor: colors.unknownSoft
+  },
+  quickOptionReview: {
+    backgroundColor: colors.accentSoft
+  },
+  quickOptionIgnored: {
+    backgroundColor: colors.surfaceWarm
+  },
+  quickOptionText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800"
+  },
+  quickOptionTextActive: {
+    color: colors.text
+  },
+  quickOptionTextKnown: {
+    color: colors.blue
+  },
+  quickOptionTextUnknown: {
+    color: colors.unknown
+  },
+  quickOptionTextReview: {
+    color: colors.accentDark
+  },
+  quickOptionTextIgnored: {
+    color: colors.textMuted
+  },
   tokenWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
     marginTop: 16
+  },
+  selectionHint: {
+    marginTop: 10,
+    color: colors.textMuted,
+    lineHeight: 20
   },
   actionBar: {
     marginTop: 12,
