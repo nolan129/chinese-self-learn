@@ -13,10 +13,11 @@
     "lint:web": "npm --workspace apps/web run lint",
     "dev:mobile": "npm --workspace apps/mobile run start",
     "dev:mobile:web": "node scripts/start-mobile-web.cjs",
+    "build:mobile:web": "npm --workspace apps/mobile run export:web",
     "contract:export": "cd apps/api && python scripts/export_openapi.py",
     "contract:generate:shared": "node scripts/generate-shared-client.mjs",
     "web:check": "npm --workspace apps/web run build",
-    "mobile:check": "npm --workspace apps/mobile run start -- --offline"
+    "mobile:check": "npm run build:mobile:web"
   },
   "devDependencies": {
     "playwright": "^1.61.0"

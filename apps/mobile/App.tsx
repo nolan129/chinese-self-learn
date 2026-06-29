@@ -14,6 +14,8 @@ import { Button, Card, Field, ScreenHeader } from "./src/components/Primitives";
 import { TokenChip } from "./src/components/TokenChip";
 import {
   api,
+  apiBaseUrl,
+  apiConfigError,
   type AnalyzeResponse,
   type AuthUser,
   type Explanation,
@@ -25,7 +27,6 @@ import {
   type VocabularyItem
 } from "./src/lib/api";
 import { clearAuthSession, getStoredRefreshToken, saveAuthSession } from "./src/lib/auth-session";
-import { registerExpoPushToken } from "./src/lib/pushNotifications";
 import { colors, spacing } from "./src/theme/theme";
 
 type Tab = "learn" | "review" | "vocabulary" | "settings";
@@ -48,6 +49,46 @@ const QUICK_STATUS_OPTIONS: Array<{ status: TokenStatus; label: string }> = [
   { status: "ignored", label: "Bỏ qua" }
 ];
 
+function isSelectedForExplain(token: Token) {
+  return token.status === "unknown" || token.status === "review";
+}
+
+function hasPendingLearnableTokens(tokens: Token[]) {
+  return tokens.some((token) => token.is_learnable && token.status === "unselected");
+}
+
+function buildExplanationKey(word: string, pinyin: string | null | undefined) {
+  return `${word}::${(pinyin ?? "").trim()}`;
+}
+
+function getSurfaceLabel(tab: Tab, learnMode: LearnMode, reviewMode: ReviewMode) {
+  if (tab === "learn") {
+    if (learnMode === "result") {
+      return "Đang tách câu và chọn từ";
+    }
+    if (learnMode === "explanation") {
+      return "Đang xem giải nghĩa";
+    }
+    return "Học từ từ đoạn chat";
+  }
+
+  if (tab === "review") {
+    if (reviewMode === "session") {
+      return "Phiên ôn đang diễn ra";
+    }
+    if (reviewMode === "complete") {
+      return "Tổng kết phiên ôn";
+    }
+    return "Các từ đến hạn hôm nay";
+  }
+
+  if (tab === "vocabulary") {
+    return "Kho từ vựng cá nhân";
+  }
+
+  return "Tài khoản và cài đặt";
+}
+
 export default function App() {
   const [authStatus, setAuthStatus] = useState<"loading" | "signed_out" | "signed_in">("loading");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -58,7 +99,6 @@ export default function App() {
   const [reviewMode, setReviewMode] = useState<ReviewMode>("home");
   const [dueCount, setDueCount] = useState(0);
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
-  const [tokens, setTokens] = useState<Token[]>([]);
   const [explanations, setExplanations] = useState<Explanation[]>([]);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary>({
     total: 0,
@@ -74,7 +114,6 @@ export default function App() {
     setReviewMode("home");
     setDueCount(0);
     setAnalysis(null);
-    setTokens([]);
     setExplanations([]);
     setReviewSummary({
       total: 0,
@@ -89,6 +128,12 @@ export default function App() {
     let active = true;
 
     async function restoreSession() {
+      if (apiConfigError) {
+        if (active) {
+          setAuthStatus("signed_out");
+        }
+        return;
+      }
       const refreshToken = await getStoredRefreshToken();
       if (!refreshToken) {
         if (active) {
@@ -121,7 +166,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (authStatus !== "signed_in") {
+    if (apiConfigError || authStatus !== "signed_in") {
       return;
     }
     let active = true;
@@ -186,8 +231,14 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar style="dark" />
-      <View style={styles.app}>
-        {authStatus === "loading" ? (
+      <View style={styles.viewport}>
+        <View style={styles.shell}>
+          <View style={styles.app}>
+        {apiConfigError ? (
+          <ScrollView contentContainerStyle={styles.authContent} keyboardShouldPersistTaps="handled">
+            <ConfigScreen />
+          </ScrollView>
+        ) : authStatus === "loading" ? (
           <ScrollView contentContainerStyle={styles.authContent} keyboardShouldPersistTaps="handled">
             <AuthScreen
               isBusy={false}
@@ -207,13 +258,18 @@ export default function App() {
           </ScrollView>
         ) : (
           <>
+            <AppChrome
+              userName={currentUser.display_name}
+              dueCount={dueCount}
+              subtitle={getSurfaceLabel(tab, learnMode, reviewMode)}
+            />
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {tab === "learn" && learnMode === "input" ? (
             <LearnHome
               dueCount={dueCount}
               onAnalyzed={(nextAnalysis) => {
                 setAnalysis(nextAnalysis);
-                setTokens(nextAnalysis.sentences[0]?.tokens ?? []);
+                setExplanations([]);
                 setLearnMode("result");
               }}
               onReview={() => switchTab("review")}
@@ -223,9 +279,9 @@ export default function App() {
           {tab === "learn" && learnMode === "result" ? (
             <AnalyzeResult
               analysis={analysis}
-              tokens={tokens}
-              setTokens={setTokens}
-              onExplain={(nextExplanations) => {
+              onAnalysisChange={setAnalysis}
+              onExplain={(nextAnalysis, nextExplanations) => {
+                setAnalysis(nextAnalysis);
                 setExplanations(nextExplanations);
                 setLearnMode("explanation");
               }}
@@ -276,6 +332,8 @@ export default function App() {
             <TabBar active={tab} onChange={switchTab} />
           </>
         )}
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -404,6 +462,71 @@ function AuthScreen({
   );
 }
 
+function ConfigScreen() {
+  return (
+    <View style={styles.authShell}>
+      <Card>
+        <View style={styles.authBrand}>
+          <View style={styles.authMark}>
+            <Text style={styles.authMarkText}>汉</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.authTitle}>Hán Note</Text>
+            <Text style={styles.muted}>Bản này được tối ưu cho mobile web và cần tìm đúng backend public.</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Chưa xác định được API host</Text>
+        <Text style={styles.muted}>{apiConfigError}</Text>
+
+        <View style={styles.configBlock}>
+          <Text style={styles.detailTitle}>Giá trị hiện tại</Text>
+          <Text style={styles.configValue}>{apiBaseUrl || "(chưa cấu hình)"}</Text>
+        </View>
+
+        <View style={styles.configBlock}>
+          <Text style={styles.detailTitle}>Mặc định khi deploy</Text>
+          <Text style={styles.configValue}>{"https://han-note.vn -> web"}</Text>
+          <Text style={styles.configValue}>{"https://api.han-note.vn -> api"}</Text>
+        </View>
+
+        <View style={styles.configBlock}>
+          <Text style={styles.detailTitle}>Nếu deploy trên host khác</Text>
+          <Text style={styles.configValue}>Đặt EXPO_PUBLIC_API_BASE_URL=https://api.example.com</Text>
+        </View>
+      </Card>
+    </View>
+  );
+}
+
+function AppChrome({
+  userName,
+  dueCount,
+  subtitle
+}: {
+  userName: string;
+  dueCount: number;
+  subtitle: string;
+}) {
+  return (
+    <View style={styles.chrome}>
+      <View style={styles.chromeBrand}>
+        <View style={styles.chromeMark}>
+          <Text style={styles.chromeMarkText}>汉</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.chromeTitle}>Hán Note</Text>
+          <Text style={styles.chromeSubtitle}>{subtitle}</Text>
+        </View>
+      </View>
+      <View style={styles.chromeMeta}>
+        <Text style={styles.chromeCount}>{dueCount}</Text>
+        <Text style={styles.chromeMetaLabel}>{userName}</Text>
+      </View>
+    </View>
+  );
+}
+
 function LearnHome({
   dueCount,
   onAnalyzed,
@@ -413,7 +536,7 @@ function LearnHome({
   onAnalyzed: (analysis: AnalyzeResponse) => void;
   onReview: () => void;
 }) {
-  const [text, setText] = useState("你看见他吗？");
+  const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -470,44 +593,96 @@ function LearnHome({
 
 function AnalyzeResult({
   analysis,
-  tokens,
-  setTokens,
+  onAnalysisChange,
   onExplain,
   onBack
 }: {
   analysis: AnalyzeResponse | null;
-  tokens: Token[];
-  setTokens: (tokens: Token[]) => void;
-  onExplain: (explanations: Explanation[]) => void;
+  onAnalysisChange: (analysis: AnalyzeResponse) => void;
+  onExplain: (analysis: AnalyzeResponse, explanations: Explanation[]) => void;
   onBack: () => void;
 }) {
-  const [selected, setSelected] = useState<Token | null>(null);
+  const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
+  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [quickStatusMode, setQuickStatusMode] = useState<TokenStatus | null>(null);
+  const activeSentence = analysis?.sentences[activeSentenceIndex] ?? null;
+  const activeTokens = activeSentence?.tokens ?? [];
+  const selectedToken = activeTokens.find((token) => token.token_index === selectedTokenIndex) ?? null;
+
+  useEffect(() => {
+    setActiveSentenceIndex(0);
+    setSelectedTokenIndex(null);
+    setQuickStatusMode(null);
+  }, [analysis?.analysis_id]);
 
   const selectedCount = useMemo(
-    () => tokens.filter((item) => item.status === "unknown" || item.status === "review").length,
-    [tokens]
+    () =>
+      analysis
+        ? analysis.sentences.reduce(
+            (total, sentence) => total + sentence.tokens.filter((token) => isSelectedForExplain(token)).length,
+            0
+          )
+        : 0,
+    [analysis]
+  );
+  const selectedSentenceCount = useMemo(
+    () =>
+      analysis
+        ? analysis.sentences.filter((sentence) => sentence.tokens.some((token) => isSelectedForExplain(token))).length
+        : 0,
+    [analysis]
   );
 
+  function goToSentence(index: number) {
+    setActiveSentenceIndex(index);
+    setSelectedTokenIndex(null);
+  }
+
   function applyTokenStatus(tokenIndex: number, status: TokenStatus) {
-    setTokens(
-      tokens.map((item) =>
-        item.token_index === tokenIndex ? { ...item, status } : item
-      )
-    );
-    setSelected(null);
+    if (!analysis) {
+      return;
+    }
+
+    let nextSentenceIndex: number | null = null;
+    const nextAnalysis = {
+      ...analysis,
+      sentences: analysis.sentences.map((sentence, sentenceIndex) => ({
+        ...sentence,
+        tokens:
+          sentenceIndex === activeSentenceIndex
+            ? sentence.tokens.map((token) =>
+                token.token_index === tokenIndex ? { ...token, status } : token
+              )
+            : sentence.tokens
+      }))
+    };
+
+    if (!hasPendingLearnableTokens(nextAnalysis.sentences[activeSentenceIndex]?.tokens ?? [])) {
+      nextSentenceIndex = nextAnalysis.sentences.findIndex(
+        (sentence, sentenceIndex) =>
+          sentenceIndex !== activeSentenceIndex && hasPendingLearnableTokens(sentence.tokens)
+      );
+    }
+
+    onAnalysisChange(nextAnalysis);
+    setSelectedTokenIndex(null);
+    if (nextSentenceIndex !== null && nextSentenceIndex !== -1) {
+      setActiveSentenceIndex(nextSentenceIndex);
+    }
   }
 
   function updateToken(status: TokenStatus) {
-    if (!selected) return;
-    applyTokenStatus(selected.token_index, status);
+    if (selectedTokenIndex === null) {
+      return;
+    }
+    applyTokenStatus(selectedTokenIndex, status);
   }
 
   function handleQuickModeToggle(status: TokenStatus) {
     setQuickStatusMode((current) => (current === status ? null : status));
-    setSelected(null);
+    setSelectedTokenIndex(null);
   }
 
   function handleTokenPress(token: Token) {
@@ -518,7 +693,7 @@ function AnalyzeResult({
       applyTokenStatus(token.token_index, quickStatusMode);
       return;
     }
-    setSelected(token);
+    setSelectedTokenIndex(token.token_index);
   }
 
   async function explain() {
@@ -526,28 +701,27 @@ function AnalyzeResult({
     setIsExplaining(true);
     setError(null);
     try {
-      const sentence = analysis.sentences[0];
       const response = await api.explainTokens({
         original_text: analysis.original_text,
-        sentences: [
-          {
+        sentences: analysis.sentences
+          .map((sentence) => ({
             sentence_index: sentence.sentence_index,
             text: sentence.text,
             translation_vi: sentence.translation_vi,
             natural_explanation_vi: sentence.natural_explanation_vi,
-            tokens: tokens
-              .filter((item) => item.status === "unknown" || item.status === "review")
-              .map((item) => ({
-                token_index: item.token_index,
-                text: item.text,
-                pinyin: item.pinyin,
-                meaning_vi_brief: item.meaning_vi_brief,
-                user_status: item.status
+            tokens: sentence.tokens
+              .filter((token) => isSelectedForExplain(token))
+              .map((token) => ({
+                token_index: token.token_index,
+                text: token.text,
+                pinyin: token.pinyin,
+                meaning_vi_brief: token.meaning_vi_brief,
+                user_status: token.status
               }))
-          }
-        ]
+          }))
+          .filter((sentence) => sentence.tokens.length > 0)
       });
-      onExplain(response.explanations);
+      onExplain(analysis, response.explanations);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Không thể giải nghĩa từ đã chọn.");
     } finally {
@@ -566,22 +740,56 @@ function AnalyzeResult({
     );
   }
 
-  const sentence = analysis.sentences[0];
-
   return (
     <View>
       <BackButton label="Kết quả phân tích" onPress={onBack} />
 
+      {analysis.sentences.length > 1 ? (
+        <View style={styles.sentenceNav}>
+          {analysis.sentences.map((sentence, sentenceIndex) => {
+            const selectedInSentence = sentence.tokens.filter((token) => isSelectedForExplain(token)).length;
+            return (
+              <Pressable
+                key={`${sentence.sentence_index}-${sentenceIndex}`}
+                onPress={() => goToSentence(sentenceIndex)}
+                style={[
+                  styles.sentenceNavItem,
+                  sentenceIndex === activeSentenceIndex && styles.sentenceNavItemActive
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sentenceNavTitle,
+                    sentenceIndex === activeSentenceIndex && styles.sentenceNavTitleActive
+                  ]}
+                >
+                  Câu {sentenceIndex + 1}
+                </Text>
+                <Text
+                  style={[
+                    styles.sentenceNavMeta,
+                    sentenceIndex === activeSentenceIndex && styles.sentenceNavMetaActive
+                  ]}
+                >
+                  {selectedInSentence > 0 ? `${selectedInSentence} từ đã chọn` : "Chưa chọn từ"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
       <Card>
         <View style={styles.cardHeader}>
           <Text style={styles.counter}>
-            {tokens.length} token · {tokens.filter((token) => token.is_learnable).length} học được
+            Câu {activeSentenceIndex + 1}/{analysis.sentences.length} · {activeTokens.length} token ·{" "}
+            {activeTokens.filter((token) => token.is_learnable).length} học được
           </Text>
           <Text style={styles.badge}>api</Text>
         </View>
-        <Text style={styles.zhLarge}>{sentence.text}</Text>
-        <Text style={styles.translation}>{sentence.translation_vi}</Text>
-        <Text style={styles.muted}>{sentence.natural_explanation_vi}</Text>
+        <Text style={styles.zhLarge}>{activeSentence?.text}</Text>
+        <Text style={styles.translation}>{activeSentence?.translation_vi}</Text>
+        <Text style={styles.muted}>{activeSentence?.natural_explanation_vi}</Text>
 
         <View style={styles.quickToolbar}>
           <Text style={styles.quickToolbarTitle}>Chọn nhanh</Text>
@@ -625,7 +833,7 @@ function AnalyzeResult({
         </View>
 
         <View style={styles.tokenWrap}>
-          {tokens.map((token) => (
+          {activeTokens.map((token) => (
             <TokenChip key={token.token_index} token={token} onPress={() => handleTokenPress(token)} />
           ))}
         </View>
@@ -638,7 +846,9 @@ function AnalyzeResult({
       </Text>
 
       <View style={styles.actionBar}>
-        <Text style={styles.actionText}>{selectedCount} từ đã chọn để học</Text>
+        <Text style={styles.actionText}>
+          {selectedCount} từ đã chọn ở {selectedSentenceCount} câu
+        </Text>
         <Button
           label={isExplaining ? "Đang giải nghĩa..." : `Giải nghĩa ${selectedCount} từ`}
           onPress={() => void explain()}
@@ -648,17 +858,19 @@ function AnalyzeResult({
       {error ? <Text style={styles.warning}>{error}</Text> : null}
 
       <Modal
-        visible={!!selected && !quickStatusMode}
+        visible={!!selectedToken && !quickStatusMode}
         transparent
         animationType="slide"
-        onRequestClose={() => setSelected(null)}
+        onRequestClose={() => setSelectedTokenIndex(null)}
       >
-        <Pressable style={styles.sheetBackdrop} onPress={() => setSelected(null)} />
+        <Pressable style={styles.sheetBackdrop} onPress={() => setSelectedTokenIndex(null)} />
         <View style={styles.sheet}>
-          {selected ? (
+          {selectedToken ? (
             <>
-              <Text style={styles.sheetWord}>{selected.text}</Text>
-              <Text style={styles.muted}>{selected.pinyin} · {selected.meaning_vi_brief}</Text>
+              <Text style={styles.sheetWord}>{selectedToken.text}</Text>
+              <Text style={styles.muted}>
+                {selectedToken.pinyin} · {selectedToken.meaning_vi_brief}
+              </Text>
               <View style={{ height: 6 }} />
               <Button label="Đã biết" variant="secondary" onPress={() => updateToken("known")} />
               <Button label="Chưa biết" variant="secondary" onPress={() => updateToken("unknown")} />
@@ -686,6 +898,30 @@ function ExplanationScreen({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const selectedSentences = useMemo(
+    () =>
+      analysis
+        ? analysis.sentences
+            .map((sentence) => ({
+              ...sentence,
+              tokens: sentence.tokens.filter((token) => isSelectedForExplain(token))
+            }))
+            .filter((sentence) => sentence.tokens.length > 0)
+        : [],
+    [analysis]
+  );
+  const sourceSentenceByExplanation = useMemo(() => {
+    const lookup = new Map<string, AnalyzeResponse["sentences"][number]>();
+    for (const sentence of selectedSentences) {
+      for (const token of sentence.tokens) {
+        const key = buildExplanationKey(token.text, token.pinyin);
+        if (!lookup.has(key)) {
+          lookup.set(key, sentence);
+        }
+      }
+    }
+    return lookup;
+  }, [selectedSentences]);
 
   async function saveAndReview() {
     if (!analysis || explanations.length === 0) {
@@ -699,20 +935,24 @@ function ExplanationScreen({
     setIsSaving(true);
     setError(null);
     try {
-      const sentence = analysis.sentences[0];
       await api.saveVocabulary({
-        items: explanations.map((item) => ({
-          word: item.word,
-          pinyin: item.pinyin,
-          meaning_vi: item.meaning_vi,
-          meaning_in_context_vi: item.meaning_in_context_vi,
-          part_of_speech: item.part_of_speech,
-          usage_note_vi: item.usage_note_vi,
-          difficulty: item.difficulty_suggestion,
-          source_sentence_zh: sentence.text,
-          source_sentence_vi: sentence.translation_vi,
-          examples: item.examples
-        }))
+        items: explanations.map((item) => {
+          const sourceSentence = sourceSentenceByExplanation.get(
+            buildExplanationKey(item.word, item.pinyin)
+          );
+          return {
+            word: item.word,
+            pinyin: item.pinyin,
+            meaning_vi: item.meaning_vi,
+            meaning_in_context_vi: item.meaning_in_context_vi,
+            part_of_speech: item.part_of_speech,
+            usage_note_vi: item.usage_note_vi,
+            difficulty: item.difficulty_suggestion,
+            source_sentence_zh: sourceSentence?.text ?? analysis.original_text,
+            source_sentence_vi: sourceSentence?.translation_vi ?? null,
+            examples: item.examples
+          };
+        })
       });
       setSaved(true);
       onReview();
@@ -738,23 +978,58 @@ function ExplanationScreen({
     <View>
       <BackButton label="Giải nghĩa" onPress={onBack} />
 
+      <Card style={{ marginBottom: 12 }}>
+        <Text style={styles.sectionTitle}>Ngữ cảnh câu</Text>
+        <Text style={styles.muted}>
+          {selectedSentences.length > 1
+            ? `Có ${selectedSentences.length} câu chứa từ anh đã chọn để học.`
+            : "Chỉ các token anh đánh dấu là chưa biết hoặc muốn ôn lại được gửi sang bước này."}
+        </Text>
+        <View style={{ height: 10 }} />
+        <Text style={styles.contextReadyText}>{explanations.length} mục giải nghĩa đang sẵn sàng để lưu.</Text>
+
+        <View style={styles.contextSentenceList}>
+          {selectedSentences.map((sentence, sentenceIndex) => (
+            <View key={`${sentence.sentence_index}-${sentenceIndex}`} style={styles.contextSentenceItem}>
+              <Text style={styles.badge}>Câu {sentenceIndex + 1}</Text>
+              <Text style={styles.contextSentenceZh}>{sentence.text}</Text>
+              <Text style={styles.translation}>{sentence.translation_vi}</Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+
       {explanations.map((item, index) => (
         <Card key={item.word} style={{ marginBottom: 12 }}>
           <Text style={styles.counter}>{index + 1} / {explanations.length}</Text>
           <Text style={styles.zhLarge}>{item.word}</Text>
           <Text style={styles.muted}>{item.pinyin} · {item.part_of_speech}</Text>
 
+          {sourceSentenceByExplanation.get(buildExplanationKey(item.word, item.pinyin)) ? (
+            <Detail
+              title="Xuất hiện trong câu"
+              body={sourceSentenceByExplanation.get(buildExplanationKey(item.word, item.pinyin))?.text ?? ""}
+            />
+          ) : null}
+
           <Detail title="Nghĩa" body={item.meaning_vi} />
           <Detail title="Trong ngữ cảnh" body={item.meaning_in_context_vi} />
           <Detail title="Ghi chú" body={item.usage_note_vi} />
 
-          {item.examples.map((example) => (
-            <View style={styles.example} key={example.zh}>
-              <Text style={styles.exampleZh}>{example.zh}</Text>
-              <Text style={styles.counter}>{example.pinyin}</Text>
-              <Text style={styles.translation}>{example.vi}</Text>
-            </View>
-          ))}
+          <View style={styles.detail}>
+            <Text style={styles.detailTitle}>Ví dụ</Text>
+          </View>
+          {item.examples.length > 0 ? (
+            item.examples.map((example) => (
+              <View style={styles.example} key={example.zh}>
+                <Text style={styles.exampleZh}>{example.zh}</Text>
+                <Text style={styles.counter}>{example.pinyin}</Text>
+                <Text style={styles.translation}>{example.vi}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.muted}>Provider chưa trả ví dụ cho từ này.</Text>
+          )}
         </Card>
       ))}
 
@@ -1014,7 +1289,6 @@ function SettingsScreen({
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isRegisteringPush, setIsRegisteringPush] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -1042,26 +1316,6 @@ function SettingsScreen({
       setMessage("Đã lưu cài đặt.");
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Không thể lưu cài đặt.");
-    }
-  }
-
-  async function registerPushToken() {
-    setMessage(null);
-    setError(null);
-    setIsRegisteringPush(true);
-    try {
-      const result = await registerExpoPushToken();
-      if (!result.token) {
-        setMessage(result.message);
-        return;
-      }
-      await api.registerPushToken(result.token);
-      setSettings((current) => (current ? { ...current, mobile_push_token: result.token } : current));
-      setMessage(result.message);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Không thể đăng ký push token.");
-    } finally {
-      setIsRegisteringPush(false);
     }
   }
 
@@ -1114,29 +1368,14 @@ function SettingsScreen({
       <Card style={{ marginTop: 12 }}>
         <Text style={styles.sectionTitle}>Thông báo</Text>
         <ToggleRow
-          label="Push notification"
-          value={settings.app_push_enabled}
-          onChange={(value) => setSettings((current) => (current ? { ...current, app_push_enabled: value } : current))}
-        />
-        <ToggleRow
           label="Telegram"
           value={settings.telegram_enabled}
           onChange={(value) => setSettings((current) => (current ? { ...current, telegram_enabled: value } : current))}
         />
         <SettingText label="Chat ID" value={settings.telegram_chat_id ?? ""} />
-        <SettingText
-          label="Push token"
-          value={settings.mobile_push_token ? shortenPushToken(settings.mobile_push_token) : "Chưa đăng ký"}
-        />
+        <SettingText label="Mobile web" value="Không dùng push notification native" />
         <View style={{ height: 10 }} />
         <Button label="Gửi thử Telegram" variant="secondary" onPress={() => void sendTelegramTest()} />
-        <View style={{ height: 10 }} />
-        <Button
-          label={isRegisteringPush ? "Đang đăng ký push..." : "Đăng ký Expo push token"}
-          variant="soft"
-          onPress={() => void registerPushToken()}
-          disabled={isRegisteringPush}
-        />
       </Card>
 
       <Card style={{ marginTop: 12 }}>
@@ -1167,11 +1406,11 @@ function SettingsScreen({
   );
 }
 
-function Detail({ title, body }: { title: string; body: string }) {
+function Detail({ title, body }: { title: string; body?: string }) {
   return (
     <View style={styles.detail}>
       <Text style={styles.detailTitle}>{title}</Text>
-      <Text style={styles.muted}>{body}</Text>
+      {body ? <Text style={styles.muted}>{body}</Text> : null}
     </View>
   );
 }
@@ -1224,13 +1463,6 @@ function ToggleRow({
   );
 }
 
-function shortenPushToken(value: string) {
-  if (value.length <= 28) {
-    return value;
-  }
-  return `${value.slice(0, 14)}...${value.slice(-10)}`;
-}
-
 function TabBar({
   active,
   onChange
@@ -1238,26 +1470,27 @@ function TabBar({
   active: Tab;
   onChange: (tab: Tab) => void;
 }) {
-  const tabs: { key: Tab; label: string }[] = [
+  const tabs = [
     { key: "learn", label: "Học" },
     { key: "review", label: "Ôn" },
-    { key: "vocabulary", label: "Từ vựng" },
+    { key: "vocabulary", label: "Từ" },
     { key: "settings", label: "Cài đặt" }
-  ];
+  ] as const;
+
+  const renderTab = (tab: (typeof tabs)[number]) => {
+    const isActive = active === tab.key;
+    return (
+      <Pressable key={tab.key} onPress={() => onChange(tab.key)} style={[styles.tab, styles.tabWithIcon, isActive && styles.activeTab]}>
+        <Text style={[styles.tabText, isActive && styles.activeTabText]}>
+          {tab.label}
+        </Text>
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.tabbar}>
-      {tabs.map((tab) => (
-        <Pressable
-          key={tab.key}
-          onPress={() => onChange(tab.key)}
-          style={[styles.tab, active === tab.key && styles.activeTab]}
-        >
-          <Text style={[styles.tabText, active === tab.key && styles.activeTabText]}>
-            {tab.label}
-          </Text>
-        </Pressable>
-      ))}
+      {tabs.map(renderTab)}
     </View>
   );
 }
@@ -1267,6 +1500,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg
   },
+  viewport: {
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 10
+  },
+  shell: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: "#E7EBE8"
+  },
   app: {
     flex: 1,
     backgroundColor: colors.bg
@@ -1275,12 +1524,72 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: spacing.pageX,
-    paddingVertical: 24
+    paddingVertical: 20
   },
   content: {
     paddingHorizontal: spacing.pageX,
-    paddingTop: 18,
-    paddingBottom: 104
+    paddingTop: 16,
+    paddingBottom: 112
+  },
+  chrome: {
+    minHeight: 74,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: spacing.pageX,
+    paddingVertical: 12
+  },
+  chromeBrand: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  chromeMark: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: colors.text,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  chromeMarkText: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: 0
+  },
+  chromeTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 0
+  },
+  chromeSubtitle: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18
+  },
+  chromeMeta: {
+    minWidth: 54,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  chromeCount: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "900",
+    letterSpacing: 0
+  },
+  chromeMetaLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    maxWidth: 88,
+    textAlign: "right"
   },
   authShell: {
     width: "100%"
@@ -1311,6 +1620,17 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     fontWeight: "900",
     letterSpacing: 0
+  },
+  configBlock: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 12,
+    marginTop: 12,
+    gap: 6
+  },
+  configValue: {
+    color: colors.text,
+    fontFamily: "monospace"
   },
   authTabs: {
     flexDirection: "row",
@@ -1422,10 +1742,44 @@ const styles = StyleSheet.create({
   },
   zhLarge: {
     color: colors.text,
-    fontSize: 42,
-    lineHeight: 50,
+    fontSize: 36,
+    lineHeight: 44,
     fontWeight: "900",
     letterSpacing: 0
+  },
+  sentenceNav: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12
+  },
+  sentenceNavItem: {
+    minWidth: 120,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4
+  },
+  sentenceNavItemActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text
+  },
+  sentenceNavTitle: {
+    color: colors.text,
+    fontWeight: "800"
+  },
+  sentenceNavTitleActive: {
+    color: "#FFFFFF"
+  },
+  sentenceNavMeta: {
+    color: colors.textMuted,
+    fontSize: 12
+  },
+  sentenceNavMetaActive: {
+    color: "#E5ECE9"
   },
   quickToolbar: {
     marginTop: 16,
@@ -1505,6 +1859,26 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 20
   },
+  contextReadyText: {
+    color: colors.text,
+    fontWeight: "700"
+  },
+  contextSentenceList: {
+    gap: 12,
+    marginTop: 12
+  },
+  contextSentenceItem: {
+    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    padding: 12,
+    gap: 8
+  },
+  contextSentenceZh: {
+    color: colors.text,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: "800"
+  },
   actionBar: {
     marginTop: 12,
     borderRadius: 8,
@@ -1571,13 +1945,13 @@ const styles = StyleSheet.create({
     fontSize: 11
   },
   reviewCard: {
-    minHeight: 520,
+    minHeight: 420,
     justifyContent: "center"
   },
   reviewWord: {
     color: colors.text,
-    fontSize: 84,
-    lineHeight: 96,
+    fontSize: 68,
+    lineHeight: 78,
     textAlign: "center",
     fontWeight: "900",
     letterSpacing: 0
@@ -1608,7 +1982,7 @@ const styles = StyleSheet.create({
   },
   wordListText: {
     color: colors.text,
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: "900",
     letterSpacing: 0
   },
@@ -1643,29 +2017,33 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     bottom: 12,
-    minHeight: 64,
-    borderRadius: 8,
+    minHeight: 72,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.tab,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     padding: 6
   },
   tab: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 56,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center"
+  },
+  tabWithIcon: {
+    gap: 4
   },
   activeTab: {
     backgroundColor: colors.accentSoft
   },
   tabText: {
     color: colors.textMuted,
-    fontWeight: "800"
+    fontWeight: "800",
+    fontSize: 12
   },
   activeTabText: {
     color: colors.accentDark

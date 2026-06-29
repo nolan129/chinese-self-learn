@@ -2,16 +2,26 @@
 
 ## Backlog
 
+- `ready` Allocate or confirm one stable Elastic IP on AWS EC2, then point `han-note.vn`, `www.han-note.vn`, and `api.han-note.vn` to that host with valid HTTPS.
+- `ready` Configure reverse proxy and TLS on EC2 so web can serve from `https://han-note.vn` and FastAPI can serve from `https://api.han-note.vn`.
+- `ready` Verify what is actually serving PostgreSQL on the EC2 Ubuntu host (`systemd` or Docker), because the latest `alembic upgrade head` failed with `ConnectionRefusedError` to `127.0.0.1:5432`.
+- `ready` Start or repair the PostgreSQL listener on the EC2 host, then rerun `python -m alembic upgrade head` from `apps/api`.
+- `ready` Create the EC2 backend `.env` with the intended PostgreSQL host, real AI provider credentials, and Telegram bot token before starting the FastAPI service under systemd.
+- `ready` After DNS is live, manually QA `https://han-note.vn` on a real phone: login -> analyze multi-sentence text -> explain -> save -> review -> settings.
+- `ready` Verify the mobile sentence-aware save path with a real two-sentence example on a phone browser, so saved vocabulary rows are confirmed to keep the correct source sentence outside local preview.
+- `ready` Decide whether the mobile web deploy should keep the current inferred `api.han-note.vn` fallback only for `han-note.vn`, or also infer `api.<host>` for future non-production domains.
 - `ready` Validate the first real account registration path on an isolated database or with a user-approved first account, so the seed-data migration can be confirmed without consuming the shared local seed state by accident.
 - `done` Authenticate GitHub locally on this workstation and perform the first commit/push to `origin/main`, now that local git bootstrap and remote wiring are in place.
 - `ready` Manually QA the new web auth flow end-to-end: register/login/logout -> analyze -> save -> gated review -> settings.
-- `ready` Manually QA the new mobile auth/session-restore flow on Expo runtime, including the gated review reveal and account-scoped vocabulary/review data.
+- `ready` Manually QA the new mobile auth/session-restore flow on real phone browsers, including the gated review reveal and account-scoped vocabulary/review data.
 - `ready` Manually QA the updated review UX copy and scoring order to confirm `Nhớ` / `Dễ` submit directly while `Chưa nhớ` / `Cần ôn tập` reveal meaning first.
 - `ready` Confirm the web auth gate behaves correctly from both `localhost` and LAN-IP URLs after the dynamic API-host fallback change.
 - `ready` Validate end-to-end web auth again from the exact browser URL the user prefers to use (`localhost`, `127.0.0.1`, or LAN IP) now that LAN CORS is allowed.
 - `ready` Run one browser-level analyze smoke test from the LAN-IP web URL after the API bind-host fix, so the earlier `Failed to fetch` path is closed with UI evidence instead of only `curl`.
 - `ready` Run one browser-level analyze smoke test from `http://localhost:3001` after a hard refresh, to confirm the `localhost -> 127.0.0.1` API-host normalization clears the last `Failed to fetch` path in the actual UI.
 - `done` Mirror the new web quick-selection UX into `apps/mobile` so long-sentence token marking is consistent between platforms.
+- `done` Refactor `apps/mobile` analyze/explain/save flow from `sentences[0]` to a sentence-aware multi-sentence state model aligned with web.
+- `done` Replace the mobile native/iPhone path with a web-only deploy path on `han-note.vn`, including web-first API host inference and the EC2 deploy playbook.
 - `ready` Decide whether web quick-selection should get a second input affordance later, such as a tiny inline tick/marker directly on each token, or whether the current armed-status toolbar is enough after user QA.
 - `ready` Inspect a few more live explain payloads from the configured provider to catalog any remaining example-key variants beyond `translation_vi`, `meaning_vi`, `nghia_vi`, and `cau_trung`.
 - `ready` Inspect a few more live explain payloads from the configured provider to catalog any remaining example-key variants beyond `translation_vi`, `meaning_vi`, `nghia_vi`, `cau_trung`, and `hanzi`.
@@ -29,7 +39,6 @@
 - `ready` Decide whether long clause-heavy explain requests should surface a matching "đang xử lý lâu hơn bình thường" hint in web/mobile, because provider-backed explain for real work sentences can also take tens of seconds.
 - `ready` Add a small operator note or helper command that distinguishes "sandboxed API for local testing" from "unsandboxed API for live remote AI" so future sessions do not accidentally boot the wrong runtime mode.
 - `ready` Add a small operator note that the checked-in local default API port is now `8011` and that the production-style web preview must be rebuilt/restarted after changing that default, otherwise the browser can keep calling a stale port baked into the old bundle.
-- `ready` Validate Expo push registration end-to-end on a physical device or native simulator, since web preview cannot produce a real token.
 - `ready` Investigate the remaining `apps/web` Windows `next dev` EPERM writes under `.next/dev` so local hot-reload works again; production preview is currently the fallback.
 - `ready` Surface `healthz.ai_provider_mode` in the web/mobile status UI so a stale backend instance is visible during QA instead of looking like bad tokenization.
 - `ready` Add a small repair path for previously saved vocabulary rows that still contain old placeholder explain text from before the Vietnamese-field normalization fix.
@@ -39,7 +48,6 @@
 - `done` Configure `apps/api/.env` with a real `AI_API_KEY`, `AI_API_URL`, and `AI_MODEL`, then run a live `openai_compatible` analyze/explain verification.
 - `done` Remove or archive the remaining `han-note-ui-starter` residue after confirming nothing still depends on it.
 - `done` Add an `.env` example or operator note for the new `openai_compatible` AI provider settings so remote activation is repeatable.
-- `done` Replace the mobile dev placeholder push token flow with real `expo-notifications` registration.
 - `done` Implement a real AI provider adapter path with JSON coercion, schema validation, and short retry behavior behind the current local fallback provider.
 - `done` Normalize the `apps/mobile` dependency bootstrap so a clean install does not rely on the temporary `node_modules.incomplete-20260620` backup plus workspace junction.
 - `done` Replace the handwritten shared TS client with generated types/client derived from `packages/shared/openapi/han-note.openapi.json`.

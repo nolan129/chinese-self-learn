@@ -5,8 +5,12 @@
 - Repo root is the canonical Hán Note workspace.
 - The local workspace is now a Git repository on branch `main`, and `origin` is configured to `https://github.com/nolan129/chinese-self-learn.git`.
 - `apps/web` is the Next.js client and now uses the shared API client for analyze, explanation, vocabulary, review, and settings flows.
-- `apps/mobile` is the Expo client and now uses the same shared API contract through a monorepo-aware Metro config.
-- Mobile settings now include a native Expo push-token registration flow backed by `expo-notifications`.
+- `apps/mobile` is now the mobile-web client and uses the shared API contract through Expo web export.
+- Mobile analyze/explain/save flow is now sentence-aware like web: one analyze request can navigate across multiple provider-returned sentences, explain selected tokens across those sentences, and save each token with the sentence where it actually appeared.
+- Mobile web now infers `https://api.han-note.vn` automatically when served from `han-note.vn` or `www.han-note.vn`, while still accepting `EXPO_PUBLIC_API_BASE_URL` for other deploy targets.
+- `apps/mobile/app.json` is now web-first, with the checked-in `icon.png` used for the web favicon and no active iOS/Android-specific app config remaining in source control.
+- The project now has a real domain, `han-note.vn`, owned by the user; DNS and HTTPS still need to be pointed at the AWS EC2 runtime so `han-note.vn` can serve the mobile web bundle and `api.han-note.vn` can serve FastAPI.
+- The EC2 deployment path is still configured to use PostgreSQL on `localhost:5432`, but the latest Ubuntu-side Alembic run on 2026-06-30 failed with `ConnectionRefusedError` to `127.0.0.1:5432`, so the database listener on the target host still needs operator verification before migration or API startup can proceed.
 - `apps/api` is a FastAPI backend scaffold with async SQLAlchemy, Alembic, review logic, notification services, and an OpenAPI export script.
 - `packages/shared` contains the generated shared TypeScript contract plus exported OpenAPI artifacts.
 - Preview assets and handoff docs live under `docs/`.
@@ -26,7 +30,7 @@
 
 ## Current Milestone
 
-- Account-based auth is now integrated across backend, web, and mobile, with the review flow updated to a gated reveal step. Current focus is live QA for first-user seed-data migration and native-device verification for mobile auth/push behavior, while browser QA has also moved into long-text analyze/explain stability and Windows local-dev runtime ergonomics.
+- Account-based auth is now integrated across backend, web, and mobile web, with the review flow updated to a gated reveal step. Current focus is EC2/domain deployment for `han-note.vn` plus live QA of the phone-optimized mobile web flow against the real HTTPS API host.
 
 ## What Exists Now
 
@@ -64,12 +68,16 @@
 - Web analyze input now opens empty instead of pre-filling a sample sentence, and the review card now asks for the final 4-level score first.
 - Web analyze now supports multi-sentence navigation after one analyze request, so long paragraphs split into multiple provider-backed sentences can be reviewed sentence by sentence in the UI.
 - Web analyze now supports both detailed per-token selection and quick status assignment for long sentences, reducing repeated clicks when marking many known/unknown tokens in one pass.
-- Mobile analyze now also supports quick status assignment for long token lists, while keeping the existing bottom-sheet picker for detailed per-token marking when quick mode is off.
-- Mobile flow wired to the same API contract for learn/review/vocabulary/settings.
-- Mobile auth now includes login/register gating, refresh-token restore through `expo-secure-store`, account logout from Settings, and the same score-first review reveal step as web.
-- Mobile analyze selection UX is now aligned more closely with web: a learner can arm `Đã biết`, `Chưa biết`, `Muốn ôn lại`, or `Bỏ qua` and then tap multiple tokens in sequence without reopening the bottom sheet each time.
+- Mobile web now supports quick status assignment for long token lists, while keeping the existing bottom-sheet picker for detailed per-token marking when quick mode is off.
+- Mobile web flow is wired to the same API contract for learn/review/vocabulary/settings.
+- Mobile web auth now includes login/register gating, refresh-token restore through browser storage, account logout from Settings, and the same score-first review reveal step as web.
+- Mobile web analyze selection UX is now aligned more closely with web: a learner can arm `Đã biết`, `Chưa biết`, `Muốn ôn lại`, or `Bỏ qua` and then tap multiple tokens in sequence without reopening the bottom sheet each time.
+- Mobile Learn Home now starts empty instead of seeding `你看见他吗？`, matching the current web behavior.
+- Mobile web now renders inside a centered phone-width shell with tighter header/type sizing and a denser bottom tab bar for handheld use.
+- Mobile web shows a deployment/config screen only when it cannot infer or validate the API host, instead of assuming a native runtime.
 - Mobile dependency bootstrap helpers at `scripts/bootstrap-mobile-node-modules.cjs` and `scripts/run-mobile-expo.cjs`.
-- Mobile native push helper at `apps/mobile/src/lib/pushNotifications.ts`, with Settings wired to register and persist Expo push tokens through the backend.
+- Mobile web deploy playbook now exists at `docs/mobile-web-deploy.md`, including DNS, build export, EC2/Nginx, and TLS steps for `han-note.vn` and `api.han-note.vn`.
+- Mobile web settings now focus on Telegram and privacy controls; native push-token registration code has been removed from the client.
 - Backend operator docs now cover the `openai_compatible` AI provider settings in `apps/api/.env.example` and `apps/api/README.md`.
 - Live AI provider verification script now exists at `apps/api/scripts/verify_live_ai_provider.py`.
 - Automated web smoke test at `scripts/web-smoke-test.cjs`, with screenshots and `report.json` under `docs/qa/web-smoke`.
@@ -93,12 +101,15 @@
 
 ## Known Blockers
 
-- Real Expo push token registration still needs validation on a physical device or native simulator; web preview only exercises the unsupported-message path.
+- `han-note.vn`, `www.han-note.vn`, and `api.han-note.vn` still need to be pointed at the EC2 host with working TLS before the mobile web bundle can be tested at the real production-like URL.
+- The latest EC2 Alembic run is blocked before schema migration because PostgreSQL did not accept connections on `127.0.0.1:5432` from the Ubuntu host (`ConnectionRefusedError` on 2026-06-30); either the service/container is down there, or `DATABASE_URL` points at the wrong place for that machine.
+- The production `.env` for EC2 still needs the real AI provider values and Telegram bot token injected after the PostgreSQL listener issue on the target host is resolved.
 - The first live registration path that migrates seed-owned MVP data into the first real account has not been executed against the shared local Postgres database yet, because doing so would permanently consume the seed data for that environment.
 - `apps/web` hot-reload via `next dev` is still blocked on this Windows machine by `EPERM` writes inside `.next/dev` even after disabling `experimental.lockDistDir`; production preview via `next build --webpack` + `next start` works.
 
 ## Validation Snapshot
 
+- `python -m alembic upgrade head` failed on the EC2 Ubuntu host on 2026-06-30 with `ConnectionRefusedError: [Errno 111] Connect call failed ('127.0.0.1', 5432)`, so the current blocker is PostgreSQL reachability on that machine rather than a migration-code exception.
 - `python -m py_compile` passed for the backend entrypoints and core services on 2026-06-19.
 - `pytest tests/test_ai_provider.py tests/test_review_logic.py tests/test_text_service.py` passed: 7 tests.
 - Web TypeScript check passed.
@@ -182,5 +193,9 @@
 - Direct provider payload inspection on 2026-06-25 confirmed another live explain-example variant where the Chinese example sentence arrives under `vi_du[].hanzi`; the earlier parser dropped that field and still showed the web placeholder for some tokens such as `连续`.
 - Live in-app browser QA on 2026-06-25 confirmed the follow-up fix: explaining `连续` in `这个陪玩师有过连续拒绝新用户订单的情况。` now shows real provider-backed examples instead of `Provider chưa trả ví dụ cho từ này.`
 - `node .\node_modules\typescript\bin\tsc -p apps/mobile/tsconfig.json --noEmit` passed on 2026-06-25 after adding the mobile quick-selection toolbar and token-tap status flow.
+- `node .\node_modules\typescript\bin\tsc -p apps/mobile/tsconfig.json --noEmit` passed again on 2026-06-25 after the mobile multi-sentence analyze/explain/save refactor and native HTTPS API config gate.
+- `python -m py_compile scripts\generate_mobile_brand_assets.py` passed on 2026-06-25.
+- `EXPO_NO_TELEMETRY=1 node scripts\run-mobile-expo.cjs config --type public` returned the expected Expo config on 2026-06-25, including `scheme: hannote`, `ios.bundleIdentifier: com.nolan129.hannote`, and the generated icon/splash assets.
+- `npm run build:mobile:web` passed on 2026-06-25 after switching the Expo runner to a repo-local `.expo-home`; the static export now lands in `apps/mobile/dist`.
 - `git status --short --branch` now resolves cleanly on 2026-06-25 after adding `E:/AI design/Chinese-self-learn` to Git `safe.directory`.
 - `git remote -v` and `git branch --show-current` confirmed on 2026-06-25 that the local repo is on `main` and `origin` points to `https://github.com/nolan129/chinese-self-learn.git`.

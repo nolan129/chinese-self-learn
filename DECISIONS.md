@@ -517,3 +517,85 @@ The web analyze flow already had a quick-selection toolbar for long sentences, b
 
 - Mobile now supports the same fast bulk-marking workflow as web for long token lists.
 - The detailed bottom-sheet flow still exists for careful one-token-at-a-time classification, so the new UX adds speed without removing precision.
+
+## 2026-06-25
+
+### Context
+
+The next mobile phase is no longer just Expo web parity. The app needs to be installable on a real iPhone through Xcode prebuild, while still staying in Expo managed mode and avoiding the old single-sentence assumptions in analyze/explain/save flows.
+
+### Decision
+
+- Keep `apps/mobile` as Expo managed source of truth and treat `apps/mobile/ios/` as a local prebuild artifact that must not be committed.
+- Refactor the mobile learn flow to keep the full `analysis.sentences[]` structure in state, with active-sentence navigation and cross-sentence explain/save behavior aligned with web.
+- Require `EXPO_PUBLIC_API_BASE_URL` to be a public HTTPS root URL for the mobile runtime, and show a configuration gate when that contract is violated instead of silently falling back to loopback hosts.
+- Standardize the mobile native defaults on `scheme: hannote` and `ios.bundleIdentifier: com.nolan129.hannote`, with checked-in brand icon/splash assets generated from a local script.
+- Keep `expo-notifications` enabled in config, but make push-token registration fail softly so missing provisioning does not block install/login/study flows during the Xcode sideload phase.
+
+### Consequence
+
+- The repo stays clean and reviewable because native iOS project files remain ephemeral Mac-side artifacts, not versioned source.
+- Mobile now has functional parity with web for long multi-sentence study flows, reducing the risk that device QA hides sentence-selection bugs that were already fixed on the web client.
+- Native iPhone verification now depends on one clear operator prerequisite: a real public HTTPS backend host exposed through `EXPO_PUBLIC_API_BASE_URL`.
+
+### Context
+
+The user has now acquired the domain `han-note.vn` and wants to point the product at an AWS EC2 host instead of relying on ad hoc public URLs. The mobile native runtime already requires a stable HTTPS host, and the repo serves both web and API surfaces.
+
+### Decision
+
+- Use the apex domain `han-note.vn` for the web app.
+- Use the subdomain `api.han-note.vn` for the FastAPI backend.
+- Point both hosts at the same EC2 machine initially, with routing separated at the reverse-proxy layer.
+
+### Consequence
+
+- Web and mobile now have one stable public naming plan that matches the current app architecture.
+- Mobile can use `EXPO_PUBLIC_API_BASE_URL=https://api.han-note.vn` without mixing web and API origins.
+
+### Context
+
+The user has changed direction again: the product will no longer ship an iOS-native build through Xcode, and `apps/mobile` should instead become the production mobile-web surface served from `han-note.vn`.
+
+### Decision
+
+- Drop the active iOS/native delivery path from the repo source of truth: no more iPhone/Xcode workflow, no native push registration code, and no iOS-specific scripts/docs in the main operator path.
+- Keep `apps/mobile` on Expo, but only as a web-exported client that builds to static assets for deployment.
+- Make the mobile web bundle infer `https://api.han-note.vn` automatically when it runs on `han-note.vn` or `www.han-note.vn`, while still accepting `EXPO_PUBLIC_API_BASE_URL` for other hosts.
+- Treat `han-note.vn` as the public mobile-web domain and `api.han-note.vn` as the API domain on the same EC2 host, split by Nginx.
+
+### Consequence
+
+- The repo is now simpler operationally: one mobile-web deployment target instead of separate native build/install steps.
+- Session restore in `apps/mobile` now relies only on browser storage, which matches the web-only runtime.
+- The next critical path is no longer Xcode verification; it is DNS, TLS, Nginx, and phone-browser QA on the real domain.
+
+### Context
+
+During EC2 deployment preparation, the operator confirmed that PostgreSQL is already running on the same EC2 host at `localhost:5432`, and the first public deployment should enable both the real AI provider and the Telegram bot path.
+
+### Decision
+
+- Keep the backend `DATABASE_URL` on the local-machine Postgres default for EC2 deployment instead of introducing a separate remote database host.
+- Treat the production `.env` as the place where real AI provider settings and `TELEGRAM_BOT_TOKEN` must be injected before the API service is started.
+
+### Consequence
+
+- The initial EC2 deploy path is simpler because database networking does not need extra VPC or external-host work.
+- The remaining high-risk operator inputs are now concentrated in `.env`: AI credentials, auth secret, and Telegram bot token.
+
+## 2026-06-30
+
+### Context
+
+The latest Ubuntu-side migration attempt for `apps/api` did not fail inside Alembic logic; it failed while opening the database connection, with `ConnectionRefusedError` to `127.0.0.1:5432`.
+
+### Decision
+
+- No architecture change was made in this session.
+- Treat the current failure as an operator/runtime issue on the EC2 host: PostgreSQL is not reachable at the `DATABASE_URL` currently being used there.
+
+### Consequence
+
+- The next deployment step is to verify whether PostgreSQL on the Ubuntu host should be started via Docker Compose or a system service, then rerun the migration unchanged.
+- No backend code or migration files need to change until the database listener is reachable.
